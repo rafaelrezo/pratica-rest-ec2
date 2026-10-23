@@ -1,0 +1,32 @@
+Crie um portal educacional em português brasileiro para a disciplina Redes
+para Controle e Automação do Ifes, semestre 2026/2. Tema: inventário de
+equipamentos fictícios das Plantas A, B e C, sem conexão com ativos reais.
+
+Requisitos obrigatórios de implantação:
+- Vou hospedar o resultado no Nginx em uma EC2 Ubuntu, como site estático.
+- A URL usará o DNS público da própria EC2 fornecido pela AWS, sem domínio
+  próprio. HTTPS usará certificado autoassinado didático no Nginx. Não fixar
+  hostname no código nem tentar criar DNS ou certificado TLS no frontend.
+- Se usar Next.js, configure output: 'export' em next.config e gere out/ com
+  npm run build. Use trailingSlash: true. Nenhum processo Node no servidor.
+- Não use SSR dinâmico, cookies de servidor, Server Actions, middleware,
+  rewrites, rotas de API, banco de dados nem serviços exclusivos da Vercel.
+- Se usar next/image, use images: { unoptimized: true }; prefira SVG local.
+- Entregue package.json, configuração e instruções de build. Informe a
+  versão de Node compatível. Não finja que arquivos .tsx são HTML pronto.
+- Não depender de fontes, imagens ou CSS externos em tempo de execução.
+
+Conteúdo: apresentação do laboratório; cartões explicando cliente HTTP,
+servidor Nginx, HTTPS/TLS e API REST; áreas Plantas A/B/C como cenário de
+cadastro administrativo; link /painel.html reservado para a prática 2.
+Nessa primeira etapa não chamar API nem inventar indicadores de processo.
+Incluir um quadro: HTTP não cifra o conteúdo; HTTPS usa TLS; o certificado
+permite verificar a identidade do servidor quando sua cadeia é confiável.
+
+Design: responsivo, contraste acessível, navegação por teclado, títulos
+claros, azul-escuro e verde, texto mínimo e legível, sem animações grandes.
+Inclua rodapé 'Laboratório didático: nenhum equipamento real conectado'.
+
+Não publique. Ao finalizar, explique como exportar o código e obter out/.
+Se uma limitação impedir exportação estática, explique-a e proponha uma
+versão equivalente em HTML/CSS/JavaScript puro, sem dependências.

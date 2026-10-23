@@ -1,0 +1,389 @@
+\input{estilo.tex}
+\newcommand{\docshort}{Prática 2 · API REST, Postman e interface web}
+\hypersetup{pdftitle={Prática 2 — CRUD REST com Postman e interface web},pdfauthor={Material didático — Redes / Ifes Campus Serra}}
+\begin{document}
+\capa{PRÁTICA 02}{Do pedido ao cadastro}{Consumir uma API REST com Postman e uma interface web}
+\textbf{Curso:} Engenharia de Controle e Automação · Ifes, Campus Serra\\
+\textbf{Duração sugerida:} 120 minutos de investigação REST, após iniciar o kit; reserve 20--30 minutos para a primeira instalação na EC2.\\
+\textbf{Organização:} duplas/trios, com uma EC2 por equipe e credenciais geradas automaticamente.
+
+\sub{O desafio}
+Você iniciará uma aplicação pronta de inventário de equipamentos fictícios das Plantas A, B e C. Deverá cadastrar, consultar, alterar e excluir recursos; depois, comparar as requisições do Postman com as enviadas por uma interface web.
+
+\caixa{Aplicação pronta, foco em REST}{O repositório contém API, banco, página web, coleção Postman e scripts prontos. Você apenas inicia o kit na sua EC2 e valida o serviço. Não é necessário programar, gerar interface com IA nem receber uma chave do professor. A mesma API será consumida pelo Postman e pelo navegador.}
+
+\sub{Ao terminar, você deverá conseguir}
+\begin{itemize}
+\item Relacionar operações CRUD a métodos, caminhos, corpos e status HTTP.
+\item Enviar JSON e credenciais no lugar correto; interpretar erros.
+\item Distinguir substituição completa por PUT de alteração parcial por PATCH.
+\item Comprovar persistência e isolamento entre grupos.
+\item Explicar a função do proxy reverso, de HTTPS e de CORS.
+\end{itemize}
+
+\sub{Antes de iniciar}
+Tenha acesso a uma conta AWS autorizada, uma EC2 Ubuntu Server 24.04 LTS dedicada, sua chave SSH e o Postman Desktop na estação. A EC2 pode ser a da prática 1; o kit também funciona em uma instância nova. A conta precisa permitir EC2 e acesso à Internet para baixar o repositório e os pacotes.
+
+\begin{tabularx}{\linewidth}{@{}lY@{}}\toprule
+Você obtém & Onde encontrar \\\midrule
+Repositório e kit & \href{https://github.com/rafaelrezo/pratica-rest-ec2}{github.com/rafaelrezo/pratica-rest-ec2}.\\
+DNS e IPv4 públicos & Console AWS, nos detalhes da sua EC2.\\
+Chaves da API & Geradas pelo script na própria EC2; nunca vêm do professor.\\
+Certificado público & Gerado pelo script e copiado por SSH verificado.\\\bottomrule
+\end{tabularx}
+\textbf{Roteiro:} iniciar o kit; validar o acesso; explorar o contrato no Postman; usar a página pronta; comparar as mensagens HTTP. Tudo opera sobre dados fictícios: mudar \cmd{ativo} não liga ou desliga uma máquina.
+
+\pagina{INICIAR / KIT PRONTO}{Do repositório à aplicação na EC2}
+\textbf{No console AWS:} use Ubuntu Server 24.04 LTS em uma instância dedicada, com IPv4 público, DNS público e sub-rede com rota para Internet Gateway. Libere TCP 22 somente para seu IP/rede administrativa e TCP 80/443 para o acesso web; não abra 8000. Se o UFW já estiver ativo, permita OpenSSH e Nginx Full. Confira custos, permissões e o término dos recursos da equipe.
+
+\sub{1. Conectar e obter os artefatos}
+Na estação, substitua os marcadores e confirme a chave do host SSH pelo console EC2 antes de aceitar a primeira conexão:
+\begin{lstlisting}
+ssh -i SUA_CHAVE.pem ubuntu@SEU_DNS_EC2
+\end{lstlisting}
+Na EC2, obtenha o repositório pronto:
+\begin{lstlisting}
+sudo apt update
+sudo apt install -y git
+git clone https://github.com/rafaelrezo/pratica-rest-ec2.git pratica-rest-ec2
+cd ~/pratica-rest-ec2
+\end{lstlisting}
+Sem Git, envie a pasta \cmd{kit/} extraída do ZIP por SCP para \cmd{~/pratica-rest-ec2/kit/}. Os scripts são os mesmos; não copie trechos de backend do PDF.
+
+\sub{2. Iniciar e validar}
+Ainda na EC2, execute os dois comandos. O início identifica automaticamente o DNS e o IPv4 públicos pelos metadados da instância:
+\begin{lstlisting}
+bash kit/iniciar-lab.sh
+bash kit/validar-lab.sh
+\end{lstlisting}
+O primeiro script prepara os serviços, o banco, HTTPS e duas identidades de teste. O segundo mostra método, caminho e status esperado/recebido, criando e removendo apenas seu item de ensaio. \textbf{Esperado:} saúde 200, sem chave 401, criação 201, leitura/alteração 200, PUT incompleto 400, isolamento 404, exclusão 204 e consulta final 404.
+
+\caixa{Validar não encerra a prática}{O script confirma que o laboratório está pronto. Nas etapas seguintes, você fará as requisições no Postman e na página para explicar o que cada mensagem significa. Não precisa editar Python, HTML ou configuração do Nginx.}
+
+\textbf{Se repetir a inicialização:} as chaves e o banco são mantidos; a página de referência é republicada. Se o DNS/IP mudar ou o certificado expirar, execute novamente e copie o certificado atualizado. Se a descoberta automática estiver desabilitada, use \cmd{bash kit/iniciar-lab.sh SEU_DNS_EC2 IP_PUBLICO} com os valores atuais do console. A instalação usa Internet e pode levar alguns minutos.
+
+\pagina{PREPARAR / ACESSO}{Obter sua chave e conferir HTTPS}
+\sub{1. Consultar as credenciais locais}
+Na sessão SSH privada, fora de gravações/capturas de tela:
+\begin{lstlisting}
+cat ~/chaves-redes/entrega-grupos.csv
+openssl x509 -in ~/redes.crt -noout -fingerprint -sha256
+\end{lstlisting}
+O CSV contém \cmd{g01} e \cmd{g02}, com chaves aleatórias distintas. Use \textbf{g01 no CRUD principal}; g02 é uma segunda identidade para testar isolamento na mesma API. Não são duas equipes físicas e não é preciso combinar o teste com colegas. Cada EC2 gera suas próprias chaves, mesmo repetindo esses nomes.
+
+\textbf{Três arquivos diferentes:} \cmd{SUA_CHAVE.pem} permite SSH; \cmd{redes.crt} é o certificado público HTTPS; a chave de g01 autentica requisições em \cmd{X-API-Key}. A chave privada TLS fica no servidor. Não as confunda.
+
+\sub{2. Obter somente o certificado público}
+Em outro terminal, \textbf{na estação}:
+\begin{lstlisting}
+scp -i SUA_CHAVE.pem ubuntu@SEU_DNS_EC2:~/redes.crt .
+openssl x509 -in redes.crt -noout -fingerprint -sha256
+curl --cacert redes.crt -i https://SEU_DNS_EC2/api/saude
+\end{lstlisting}
+Compare as impressões digitais da estação e da sessão SSH. Espere 200 e \cmd{{"status":"ok"}}. O certificado autoassinado tem validade de sete dias e cobre o DNS/IPv4 informados. O DNS da AWS não fornece confiança HTTPS automaticamente.
+
+\sub{3. Abrir a aplicação pronta}
+Abra \cmd{https://SEU_DNS_EC2/painel.html}. Confira o certificado e estabeleça a confiança específica no navegador. Digite a chave de g01 e clique em ``Conectar / listar''. A página deve mostrar uma lista vazia ou os registros já criados nessa identidade. A chave fica apenas na memória da página.
+
+\textbf{Se o acesso externo falhar:} o script já testou aplicação e HTTPS dentro da EC2. Confira DNS/IP atuais, regras 443, rota pública e rede da estação. Erro de certificado exige conferir SAN, data e confiança. Não desligue a verificação TLS globalmente nem exponha 8000.
+
+\caixa{Ponto de partida}{Anote a URL, o GET de saúde e o resultado da validação automática, sem registrar chaves. O restante da prática investiga a API que já está funcionando.}
+
+\pagina{ENTENDER A ARQUITETURA}{Uma API, vários clientes}
+\begin{center}
+\begin{tikzpicture}[node distance=14mm,box/.style={draw=verde,rounded corners,fill=suave,align=center,text width=3.7cm,minimum height=1.6cm},>={Stealth}]
+\node[box](p){Postman ou navegador\\cliente HTTP};
+\node[box,right=of p](n){Nginx na EC2\\porta pública 443};
+\node[box,right=of n](a){Gunicorn + Flask\\127.0.0.1:8000};
+\draw[->,thick](p)--node[above,font=\small]{HTTPS}(n);
+\draw[->,thick](n)--node[above,font=\small]{HTTP}(a);
+\node[below=5mm of a,font=\small,align=center]{SQLite em disco\\cadastros por grupo};
+\end{tikzpicture}
+\end{center}
+O Nginx entrega a página em \cmd{/} e encaminha \cmd{/api/} para a aplicação. Gunicorn executa o aplicativo Flask como um serviço. SQLite persiste os dados em arquivo. A porta 8000 escuta apenas em loopback e não é liberada no Security Group.
+
+\sub{O que torna esta interface orientada a recursos?}
+\cmd{/api/equipamentos} identifica uma coleção. \cmd{/api/equipamentos/7} identifica um item. Os caminhos usam substantivos e os métodos expressam ações. As representações são JSON. As respostas utilizam status HTTP e cada requisição protegida leva a credencial necessária.
+
+Este é um CRUD didático inspirado no estilo REST. Usar JSON e métodos HTTP, isoladamente, não demonstra todas as restrições de uma arquitetura REST completa. O objetivo da aula é aplicar semântica HTTP, recursos e representações de forma consistente.
+
+\sub{Como o grupo é identificado?}
+O cabeçalho \cmd{X-API-Key} contém a chave de g01 gerada na sua EC2. O servidor associa essa chave ao grupo e restringe todas as operações aos seus registros. Não existe campo \cmd{grupo} no corpo; tentar editar um item de outro grupo retorna 404.
+
+\textbf{Limites:} a chave identifica o grupo, não uma pessoa. Trata-se de autenticação didática com autorização por grupo, sem gestão individual de usuários. Ela é enviada por HTTPS; a interface do aluno não consegue esconder de seu próprio usuário a chave que utiliza. Não a publique no código nem em prompts.
+
+\caixa{Pense antes do primeiro teste}{Quem inicia a conexão? Qual programa termina TLS? Quem lê e grava SQLite? Por que CORS não substitui a chave? Identifique também onde os dados ainda podem aparecer em texto claro: cliente, Nginx, loopback e processo da aplicação.}
+\fonte{https://flask.palletsprojects.com/en/stable/deploying/gunicorn/}{Flask: execução com Gunicorn}
+
+\pagina{CONTRATO / DADOS}{Conheça o recurso antes de enviar}
+\begin{lstlisting}
+{
+  "id": 7,
+  "nome": "CLP-A-01",
+  "tipo": "clp",
+  "local": "Planta A",
+  "ativo": true
+}
+\end{lstlisting}
+\begin{tabularx}{\linewidth}{@{}lY@{}}\toprule
+Campo & Regra desta API \\\midrule
+\cmd{id} & Gerado pelo servidor. Usar na URL; não enviar no corpo.\\
+\cmd{nome} & Texto com 1--80 caracteres após retirar espaços das pontas; único por grupo.\\
+\cmd{tipo} & Um de: \cmd{sensor}, \cmd{clp}, \cmd{ihm}, \cmd{atuador}, \cmd{outro}.\\
+\cmd{local} & Texto com 1--80 caracteres. Ex.: Planta A, Operação, IDMZ.\\
+\cmd{ativo} & Booleano JSON: \cmd{true} ou \cmd{false}, sem aspas.\\\bottomrule
+\end{tabularx}
+
+\sub{Rotas disponíveis}
+\begin{tabularx}{\linewidth}{@{}llY@{}}\toprule
+Método & Caminho após \cmd{/api} & Resposta de sucesso \\\midrule
+GET & \cmd{/saude} & 200 \cmd{{"status":"ok"}}, sem chave.\\
+GET & \cmd{/equipamentos} & 200 com \cmd{itens} e \cmd{total}.\\
+GET & \cmd{/equipamentos/{id}} & 200 com um objeto.\\
+POST & \cmd{/equipamentos} & 201 com objeto e \cmd{Location}.\\
+PUT & \cmd{/equipamentos/{id}} & 200 com objeto substituído.\\
+PATCH & \cmd{/equipamentos/{id}} & 200 com objeto atualizado.\\
+DELETE & \cmd{/equipamentos/{id}} & 204, sem corpo.\\\bottomrule
+\end{tabularx}
+Todas as rotas, exceto saúde e preflight OPTIONS, exigem chave. Use caminhos sem barra final. Não há filtros, paginação nem busca no servidor. POST e PUT exigem os quatro campos editáveis; PATCH aceita um ou mais. Campos desconhecidos são rejeitados. O limite de corpo é 16 KiB.
+
+\textbf{Exemplo de listagem vazia:} \cmd{{"itens":[],"total":0}}. O ID 7 é apenas ilustrativo. Não presuma que o primeiro cadastro receberá ID 1: os IDs são gerados pela API e compartilhados pelas identidades g01/g02 dessa instância.
+
+\pagina{POSTMAN / PREPARAR}{Configurar ambiente e confiança TLS}
+\begin{enumerate}
+\item Abra o Postman Desktop. Pelo botão \textit{Import}, carregue a coleção:\newline
+\cmd{redes-crud.postman_collection.json}; depois, o ambiente:\newline
+\cmd{redes.postman_environment.json}. Ambos estão em \cmd{kit/postman/}.
+\item Selecione o ambiente ``Redes | preencher localmente''. Defina \cmd{baseUrl} com a URL HTTPS da sua EC2, \textbf{sem} \cmd{/api} e sem barra final.
+\item Defina \cmd{apiKey} com a chave de g01 do seu CSV, como valor local/privado ou em um Vault, conforme a versão disponível. Marcar como segredo oculta a exibição, mas não assegura, sozinho, que o valor nunca seja sincronizado. Não compartilhe ambiente preenchido.
+\item Deixe \cmd{equipamentoId} vazio; a requisição de criação vai preenchê-lo usando o ID da resposta.
+\item Se houver certificado público válido, mantenha a verificação TLS padrão. Se autoassinado, obtenha \cmd{redes.crt} por canal verificado e adicione-o em \textit{Settings → Certificates → CA Certificates} no aplicativo Desktop. Verifique SAN e validade. Mantenha \textit{SSL certificate verification} ligada.
+\end{enumerate}
+\fonte{https://learning.postman.com/docs/getting-started/basics/about-postman-agent/}{Postman: Desktop e agentes}
+
+\sub{Faça o primeiro GET manualmente}
+Crie uma requisição, selecione GET e informe:
+\begin{lstlisting}
+{{baseUrl}}/api/saude
+\end{lstlisting}
+Clique \textit{Send}. A resposta deve ser 200, com \cmd{{"status":"ok"}}. Esse teste verifica que Nginx e aplicação respondem pela rede, mas ainda não testa sua chave nem uma operação de banco.
+
+\sub{Prepare a autenticação das chamadas protegidas}
+Na coleção importada, a aba \textit{Authorization} já usa \textit{API Key}: chave \cmd{X-API-Key}, valor \cmd{{{apiKey}}}, local \textit{Header}. Requisições herdam essa configuração; os testes sem chave a desativam de propósito.
+
+Para uma requisição nova fora da coleção, configure manualmente o cabeçalho \cmd{X-API-Key: SUA_CHAVE}. Nunca adicione a chave à query string. Ao listar \cmd{/api/equipamentos}, o resultado deve ser 200. Sem chave, deve ser 401.
+
+\caixa{Verificação 1}{Registre: sucesso de saúde; tentativa sem chave; listagem autenticada. O relatório deve ocultar o valor de \cmd{X-API-Key}. Se saúde responde 200 e listar retorna 401, explique qual parte da infraestrutura já demonstrou funcionar.}
+
+\pagina{CRUD / CREATE E READ}{Criar e conferir um cadastro}
+\sub{1. POST para a coleção}
+No Postman: método POST; URL \cmd{{{baseUrl}}/api/equipamentos}; aba \textit{Body → raw → JSON}. O cabeçalho \cmd{Content-Type: application/json} deve estar presente.
+\begin{lstlisting}
+{
+  "nome": "CLP-A-01",
+  "tipo": "clp",
+  "local": "Planta A",
+  "ativo": true
+}
+\end{lstlisting}
+\textbf{Esperado:} 201 Created; objeto com ID gerado; cabeçalho \cmd{Location: /api/equipamentos/ID}. Se o nome já existir em seu grupo, altere-o ou use um cadastro que você ainda não criou.
+
+\sub{2. GET para o item criado}
+Copie o ID real retornado para a variável \cmd{equipamentoId}. Na coleção automática, o teste do POST faz isso por você.
+\begin{lstlisting}
+GET {{baseUrl}}/api/equipamentos/{{equipamentoId}}
+X-API-Key: {{apiKey}}
+\end{lstlisting}
+O resultado deve ser 200 com os dados enviados e o ID. Faça também GET na coleção e confirme que \cmd{itens} contém o cadastro e que \cmd{total} corresponde à quantidade retornada.
+
+\sub{3. A mesma ideia com curl, opcional}
+Para comparar ferramentas, configure na estação uma variável temporária, sem colocar a chave no histórico. Use um shell Bash compatível:
+\begin{lstlisting}
+BASE_URL='https://SEU_DNS_EC2'
+read -rsp 'Chave do grupo: ' API_KEY; echo
+curl --cacert redes.crt -i "$BASE_URL/api/equipamentos" \
+  -H "X-API-Key: $API_KEY"
+unset API_KEY
+# redes.crt foi obtido pelo canal verificado da pratica 1.
+\end{lstlisting}
+O cabeçalho será enviado ao servidor; mantenha o terminal privado. O \cmd{curl} e o Postman podem representar a mesma requisição. Não é necessário enviar pelo navegador para usar HTTP.
+
+\caixa{Verificação 2}{Mostre que criar e ler são requisições diferentes. Identifique por que o POST recebe JSON no corpo e por que o ID é obtido da resposta. Explique por que repetir o POST pode produzir 409, enquanto repetir o GET não cria outro equipamento.}
+
+\pagina{CRUD / UPDATE}{PUT e PATCH não pedem a mesma coisa}
+\sub{1. PATCH: alterar apenas um campo}
+Método PATCH na URL do item. Corpo JSON:
+\begin{lstlisting}
+{"ativo": false}
+\end{lstlisting}
+\textbf{Esperado:} 200; \cmd{ativo} fica falso; nome, tipo e local permanecem. Leia novamente por GET para conferir. O campo apenas informa o estado do cadastro.
+
+\sub{2. PUT: enviar toda a representação editável}
+Método PUT na mesma URL. Corpo JSON:
+\begin{lstlisting}
+{
+  "nome": "CLP-A-01",
+  "tipo": "clp",
+  "local": "Planta B",
+  "ativo": true
+}
+\end{lstlisting}
+\textbf{Esperado:} 200, com todos os campos fornecidos. Neste contrato, PUT substitui um item existente; não cria um ID desconhecido. Se o item não existir, retorna 404. Esse comportamento está definido pela API e não deve ser adivinhado pelo cliente.
+
+\sub{3. Teste a diferença de propósito}
+Envie somente \cmd{{"ativo":false}} por PUT. A API deve responder 400, pois faltam campos obrigatórios. Envie o mesmo corpo por PATCH: deve responder 200. Não generalize que todo backend valida de forma idêntica; o cliente deve seguir o contrato recebido.
+
+\sub{4. Faça uma previsão antes de executar}
+\begin{tabularx}{\linewidth}{@{}lYY@{}}\toprule
+Operação & Previsão de efeito & Evidência após o GET \\\midrule
+PATCH \cmd{ativo=false} & \rule{2.8cm}{0.2pt} & \rule{3cm}{0.2pt}\\
+Mesmo PATCH novamente & \rule{2.8cm}{0.2pt} & \rule{3cm}{0.2pt}\\
+PUT completo & \rule{2.8cm}{0.2pt} & \rule{3cm}{0.2pt}\\
+PUT incompleto & \rule{2.8cm}{0.2pt} & \rule{3cm}{0.2pt}\\\bottomrule
+\end{tabularx}
+
+\caixa{Verificação 3}{Justifique por que atribuir o mesmo valor com PATCH pode ser idempotente. Explique também por que o corpo de PUT inclui \cmd{ativo}, mesmo quando você só pretendia alterar \cmd{local}.}
+
+\pagina{CRUD / DELETE E ERROS}{Resultados esperados também incluem falhas}
+\sub{1. DELETE do cadastro criado pelo grupo}
+Envie DELETE para \cmd{/api/equipamentos/ID}. \textbf{Esperado:} 204 No Content, sem corpo. Depois, GET para o mesmo ID deve retornar 404. Repetir DELETE também retorna 404; o recurso continua ausente.
+
+\sub{2. Execute estes testes controlados}
+\begin{tabularx}{\linewidth}{@{}p{4.7cm}lY@{}}\toprule
+Alteração no teste & Status & Explicação esperada \\\midrule
+Retirar a chave de uma rota protegida & 401 & Não foi apresentada credencial válida.\\
+POST incompleto ou JSON inválido & 400 & A representação recebida é inválida.\\
+Enviar \cmd{ativo: "true"} no JSON & 400 & Texto não é booleano.\\
+Repetir nome no mesmo grupo & 409 & Conflito com recurso existente.\\
+Enviar \cmd{text/plain} no POST & 415 & Formato de corpo não aceito.\\
+PUT na coleção, sem ID & 405 & Método não disponível nesse recurso.\\
+GET de item excluído & 404 & Esse item não está disponível no grupo.\\\bottomrule
+\end{tabularx}
+Erros da aplicação têm corpo \cmd{{"erro":"mensagem"}}. Erros do Nginx, como 502, podem vir em HTML. Por isso, o cliente precisa verificar status e conteúdo; não deve presumir que toda resposta sempre é JSON.
+
+\sub{3. Isolamento sem depender de outra equipe}
+Crie um novo item com a chave de g01 e anote o ID. Duplique o ambiente Postman e use nele a chave de g02 do seu CSV, mantendo \cmd{baseUrl}. Para o ID de g01, GET, PATCH, PUT e DELETE com g02 devem retornar 404. Volte a g01: GET deve retornar 200 e os dados devem estar intactos. Exclua o item com g01. A segunda chave é válida; o item é que está fora de seu escopo.
+
+\caixa{Verificação 4}{Preencha uma tabela com método, caminho, status, corpo resumido e interpretação para criar, listar, consultar, alterar, excluir e dois erros. Não inclua chaves. Uma resposta 404 é evidência de que o servidor respondeu HTTP; ela não equivale a timeout de rede.}
+
+\textbf{Limite de segurança do exercício:} a API possui validação e isolamento por grupo, mas não foi projetada para uso de produção. Não utilize dados pessoais nem a conecte a CLPs, sensores ou atuadores reais.
+
+\pagina{POSTMAN / REPETIR}{Executar a coleção e ler os testes}
+\sub{Sequência da coleção fornecida}
+\begin{tabularx}{\linewidth}{@{}llY@{}}\toprule
+Ordem & Teste & Status esperado \\\midrule
+01--03 & Saúde; listagem sem chave; listagem autenticada. & 200, 401, 200.\\
+04--06 & Criar; ler o ID; repetir o nome. & 201, 200, 409.\\
+07--08 & PATCH parcial; PUT completo. & 200, 200.\\
+09--11 & Dados incompletos; formato errado; método errado. & 400, 415, 405.\\
+12--13 & Excluir; ler o excluído. & 204, 404.\\\bottomrule
+\end{tabularx}
+Execute os itens em ordem, manualmente ou em \textit{Run Collection}, conforme os limites do plano. O POST usa um nome com instante atual para reduzir colisões entre execuções e salva o ID real em \cmd{equipamentoId}. Não rode duas execuções concorrentes no mesmo ambiente, pois elas compartilham essa variável.
+
+\sub{Entenda um teste de resposta}
+Na aba \textit{Scripts → Post-response} ou \textit{Tests}, conforme sua versão:
+\begin{lstlisting}
+pm.test("Criado", () => pm.response.to.have.status(201));
+const dados = pm.response.json();
+pm.environment.set("equipamentoId", String(dados.id));
+\end{lstlisting}
+Esse script é executado depois da resposta. Uma asserção aprovada verifica algo delimitado, como status ou campo. Não comprova que toda a infraestrutura é segura ou que todos os clientes funcionarão.
+
+\sub{O caso 204 exige tratamento próprio}
+\begin{lstlisting}
+pm.test("Excluído sem corpo", () => {
+  pm.response.to.have.status(204);
+  pm.expect(pm.response.text()).to.eql("");
+});
+\end{lstlisting}
+Não execute \cmd{pm.response.json()} indiscriminadamente para 204: não há JSON para interpretar. A interface web enfrenta o mesmo problema se chamar \cmd{response.json()} sempre.
+
+\caixa{Verificação 5}{Entregue o resultado da execução, com os 13 itens e status esperados. Se um teste falhar, registre qual pré-condição não foi atendida. Um teste que espera 401 e recebe 401 deve passar; o objetivo não é obter 200 em todas as chamadas.}
+
+\pagina{APLICAÇÃO WEB / CLIENTE PRONTO}{A página consome a mesma API}
+A interface já foi publicada pelo script em \cmd{/painel.html}. Não há etapa de programação nem build. O código JavaScript do navegador envia requisições HTTP para a mesma API que você explorou no Postman.
+
+\begin{enumerate}
+\item Abra \cmd{https://SEU_DNS_EC2/painel.html}, informe a chave de g01 e liste os cadastros.
+\item Abra DevTools → Network/Rede. Limpe a lista e crie um cadastro pela página. Localize POST \cmd{/api/equipamentos}: observe JSON, \cmd{Content-Type}, status 201 e o ID retornado. Oculte a chave nas evidências.
+\item Consulte esse mesmo ID pelo Postman com g01. Deve retornar os mesmos dados. A interface não possui um inventário separado.
+\item Altere \cmd{ativo} pelo Postman com PATCH. Liste novamente na página e confira a mudança. Faça o inverso: altere na página e confira por GET no Postman.
+\item Exclua pela página com confirmação. Localize DELETE e o 204 sem corpo na aba Network; consulte o ID no Postman e confira 404.
+\end{enumerate}
+
+\sub{Do clique à representação}
+\begin{tabularx}{\linewidth}{@{}lYY@{}}\toprule
+Ação na página & Requisição observada & Evidência na resposta \\\midrule
+Conectar / listar & GET da coleção & Lista JSON e total, 200.\\
+Cadastrar & POST da coleção & ID do novo recurso, 201.\\
+Ler um item & GET com ID & Representação do recurso, 200.\\
+Salvar edição completa & PUT com ID & Representação atualizada, 200.\\
+Alternar ativo & PATCH com ID & Campo alterado, 200.\\
+Excluir & DELETE com ID & Corpo vazio, 204.\\\bottomrule
+\end{tabularx}
+
+\caixa{Verificação 6}{Escolha uma operação e explique a sequência: ação do usuário; método/URL/corpo enviados; resposta da API; atualização da tela. Compare o cadastro pelos dois clientes. O que permite criar outro aplicativo para a mesma API sem reescrever o armazenamento?}
+
+\textbf{Por que isso permite construir aplicações web?} A API oferece um contrato de recursos e representações. Clientes distintos utilizam esse contrato por HTTP; a persistência e as regras de acesso permanecem no servidor. A página transforma ações do usuário em requisições e respostas em elementos visuais. REST orienta essa organização; não exige uma interface específica.
+
+\textbf{Aprofundamento opcional:} o kit preserva o prompt completo do v0 no anexo, para quem quiser criar outra interface depois. Isso não é requisito de execução nem de entrega desta prática.
+
+\pagina{NAVEGADOR / ORIGENS}{Evitar dois problemas comuns de integração}
+\sub{Mesma origem: o caminho recomendado}
+Uma origem é a combinação de esquema, host e porta. Se a página está em \cmd{https://SEU_DNS_EC2} e chama \cmd{/api/equipamentos}, a requisição usa a mesma origem. O Nginx encaminha internamente para o Python. A porta 8000 não aparece na URL pública e não é aberta para os alunos.
+
+\sub{Origem diferente: o caso da prévia do v0}
+Uma página em outro domínio que faça \cmd{fetch} para a EC2 está em outra origem. O navegador exige uma política CORS compatível. Com JSON e \cmd{X-API-Key}, normalmente envia antes OPTIONS (preflight), consultando método e cabeçalhos permitidos. A aplicação já sabe responder, mas uma origem externa só será aceita se cadastrada em \cmd{LAB_CORS_ORIGINS}. O caminho desta prática usa a mesma origem e dispensa esse ajuste.
+
+\textbf{A chave continua necessária.} CORS é uma política aplicada por navegadores; não substitui autenticação nem um firewall. O Postman Desktop e o \cmd{curl} não aplicam a mesma restrição de origem que uma página. Consequentemente, funcionar no Postman não prova que funcionará no navegador.
+\fonte{https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS}{MDN: CORS e preflight}
+
+\sub{HTTPS chamando HTTP: conteúdo misto}
+Se a página é HTTPS e tenta chamar uma API HTTP remota, o navegador pode bloquear a requisição como conteúdo misto. Liberar CORS não corrige isso. Use HTTPS na API ou sirva a página e a API pela mesma origem HTTPS no Nginx.
+\fonte{https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Mixed_content}{MDN: conteúdo misto}
+
+\textbf{Certificado autoassinado em outra origem:} uma prévia hospedada pode falhar por confiança TLS, por CORS ou por ambos. Para a aula, teste o site exportado e a API juntos na EC2. Se a prévia externa for indispensável, use certificado publicamente confiável e permita somente a origem exata da página, após inspecionar o cabeçalho \cmd{Origin}. A origem pode mudar entre prévias.
+
+\caixa{Não são correções válidas}{Não usar \cmd{mode: 'no-cors'}: a resposta fica opaca para o JavaScript e os cabeçalhos necessários são limitados. Não desabilitar a segurança do navegador e não expor a porta 8000 para contornar o proxy.}
+
+\sub{Teste de distinção}
+A API funciona no Postman, mas a página mostra ``Failed to fetch''. Verifique primeiro Console, Network, URL, certificado, esquema e OPTIONS. Se o servidor responde 401 em JSON, a requisição chegou à aplicação: investigue a chave.
+
+\pagina{DIAGNÓSTICO E ENTREGA}{Transformar observação em explicação}
+\begin{tabularx}{\linewidth}{@{}p{3.3cm}YY@{}}\toprule
+Sintoma & O que observar & Próximo teste \\\midrule
+Timeout & Não há resposta HTTP. & Rede/SG/rota; comparar com saúde local.\\
+Erro de certificado & Falha antes de HTTP. & Confiança, SAN, data e nome/IP.\\
+502 & Nginx responde; upstream falha. & Testar serviço e saúde em \cmd{127.0.0.1:8000}.\\
+401 & A aplicação rejeita a chave. & Ambiente selecionado e header correto.\\
+400 / 415 & Corpo ou formato incorreto. & Conferir JSON, tipos e Content-Type.\\
+404 & Caminho/ID/grupo. & Listar os seus itens e usar ID real.\\
+409 & Nome duplicado no grupo. & Consultar antes de repetir criação.\\
+Só navegador falha & Console, OPTIONS e TLS. & Investigar CORS e conteúdo misto.\\
+Interface mostra erro após excluir & DELETE retornou 204? & Não fazer parse de corpo ausente.\\\bottomrule
+\end{tabularx}
+
+\sub{Persistência e diagnóstico na sua EC2}
+Crie um item com g01, anote o ID e execute \cmd{sudo systemctl restart redes-api} por SSH. Repita GET: espere 200 e os mesmos dados. Se houver 502, use \cmd{sudo systemctl status redes-api --no-pager} e \cmd{sudo journalctl -u redes-api -n 30 --no-pager}. Compare com a saúde local em \cmd{http://127.0.0.1:8000/api/saude}. Exclua o item após registrar a evidência.
+
+\sub{Entrega do grupo}
+\begin{enumerate}
+\item Tabela de operações com método, caminho, corpo resumido, status e efeito confirmado por GET.
+\item Resultado dos 13 testes da coleção ou execução manual equivalente.
+\item Comparação fundamentada entre PUT/PATCH, 401/404 e falha de transporte/erro HTTP.
+\item Evidência de persistência após reiniciar a API e isolamento entre g01/g02, sem exposição de chaves.
+\item URL e captura do Network mostrando uma operação da página pronta sobre o mesmo cadastro acessado no Postman; explique como a interface utiliza o contrato REST.
+\end{enumerate}
+
+\sub{Perguntas para discussão}
+Por que POST não é sinônimo de ``enviar qualquer coisa''? Por que sucesso no ping não prova o CRUD? Por que a chave não pertence à URL? Por que o Nginx pode ver o JSON mesmo quando o aluno usa HTTPS? Que evidência distingue 502 de 401?
+
+\textbf{Ao encerrar:} exclua somente os cadastros do seu grupo; apague a chave de ambientes compartilhados; feche a interface; remova certificados/exceções didáticas adicionados à estação. Salve as evidências e termine a EC2 da sua equipe quando não for mais utilizada; confira recursos remanescentes e custos. Não há API docente compartilhada neste roteiro.
+
+\textbf{Escopo:} scripts, API, página pronta e coleção acompanham o repositório/ZIP. O guia docente descreve a preparação da distribuição e os critérios de avaliação; nenhuma etapa do aluno depende de ações do professor no servidor.
+
+{\footnotesize Revisão do fluxo autônomo em 23/10/2026; referências técnicas de 16--23/10/2026. Os nomes de abas e a disponibilidade de recursos do Postman/v0 variam conforme versão e plano.}
+\pagina{ANEXO OPCIONAL / FORA DO NÚCLEO}{Criar outra interface com v0}
+Copie este texto ou use o arquivo editável correspondente do kit. Não acrescente chaves reais. O aplicativo gerado deverá cumprir o contrato do backend fornecido.
+\lstinputlisting[basicstyle=\ttfamily\footnotesize]{../kit/prompts/02-crud-v0.txt}
+\finalizar

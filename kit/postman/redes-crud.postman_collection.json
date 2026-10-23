@@ -1,0 +1,407 @@
+{
+  "info": {
+    "name": "Redes 2026-2 | Inventário REST",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Execute em ordem. Somente dados fictícios. Não compartilhe ambientes preenchidos com chaves."
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "key",
+        "value": "X-API-Key",
+        "type": "string"
+      },
+      {
+        "key": "value",
+        "value": "{{apiKey}}",
+        "type": "string"
+      },
+      {
+        "key": "in",
+        "value": "header",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "nomeTeste",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "01 Saúde (sem chave)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/saude",
+        "description": "Esperado: HTTP 200",
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Listar sem chave → 401",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/equipamentos",
+        "description": "Esperado: HTTP 401",
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 Listar meu grupo",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/equipamentos",
+        "description": "Esperado: HTTP 200"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Lista e total\", () => { const d=pm.response.json(); pm.expect(d.itens).to.be.an(\"array\"); pm.expect(d.total).to.eql(d.itens.length); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 Criar equipamento",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/equipamentos",
+        "description": "Esperado: HTTP 201",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"{{nomeTeste}}\",\n  \"tipo\": \"clp\",\n  \"local\": \"Planta A\",\n  \"ativo\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set(\"nomeTeste\", \"CLP-\"+Date.now());"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "pm.test(\"ID e Location\", () => { const d=pm.response.json(); pm.expect(d.id).to.be.a(\"number\"); pm.expect(pm.response.headers.get(\"Location\")).to.eql(\"/api/equipamentos/\"+d.id); pm.environment.set(\"equipamentoId\", String(d.id)); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Consultar por ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/equipamentos/{{equipamentoId}}",
+        "description": "Esperado: HTTP 200"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 Repetir nome → 409",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/equipamentos",
+        "description": "Esperado: HTTP 409",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"{{nomeTeste}}\",\n  \"tipo\": \"clp\",\n  \"local\": \"Planta A\",\n  \"ativo\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 Alterar um campo (PATCH)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/equipamentos/{{equipamentoId}}",
+        "description": "Esperado: HTTP 200",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ativo\": false\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Ativo é false\", () => pm.expect(pm.response.json().ativo).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 Substituir cadastro (PUT)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/equipamentos/{{equipamentoId}}",
+        "description": "Esperado: HTTP 200",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"{{nomeTeste}}\",\n  \"tipo\": \"clp\",\n  \"local\": \"Planta B\",\n  \"ativo\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 Campos incompletos → 400",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/equipamentos",
+        "description": "Esperado: HTTP 400",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"Incompleto\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 Tipo de conteúdo incorreto → 415",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "text/plain"
+          }
+        ],
+        "url": "{{baseUrl}}/api/equipamentos",
+        "description": "Esperado: HTTP 415",
+        "body": {
+          "mode": "raw",
+          "raw": "isto nao e JSON"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 415\", () => pm.response.to.have.status(415));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 Método indevido → 405",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/equipamentos",
+        "description": "Esperado: HTTP 405",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"{{nomeTeste}}\",\n  \"tipo\": \"clp\",\n  \"local\": \"Planta A\",\n  \"ativo\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 405\", () => pm.response.to.have.status(405));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 Excluir",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{baseUrl}}/api/equipamentos/{{equipamentoId}}",
+        "description": "Esperado: HTTP 204"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 204\", () => pm.response.to.have.status(204));",
+              "pm.test(\"204 sem corpo\", () => pm.expect(pm.response.text()).to.eql(\"\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 Consultar excluído → 404",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/equipamentos/{{equipamentoId}}",
+        "description": "Esperado: HTTP 404"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

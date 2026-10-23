@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+*.db
+*.sqlite*
+chaves*/
+*.env
+entrega-grupos.csv
+redes.crt
+redes.key

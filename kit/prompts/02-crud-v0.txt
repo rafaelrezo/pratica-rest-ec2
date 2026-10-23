@@ -1,0 +1,48 @@
+Evolua o portal para uma interface de inventário didático usando esta API
+REST já existente. Não crie outro backend, banco de dados ou mocks que
+simulem sucesso. A página será exportada estaticamente e servida no Nginx
+da EC2. Continue com output: 'export' e os requisitos da prática 1.
+
+Toda chamada fetch deve ocorrer no navegador (componente cliente).
+URL base padrão: /api. Permita informar outra URL HTTPS confiável.
+O host público será o DNS da própria EC2 fornecido pela AWS, com certificado
+autoassinado didático confiado no cliente. Não fixar esse nome nem um IP
+no código; /api acompanha a origem da página.
+Campo de senha para digitar a chave do grupo, mantida apenas na memória.
+Enviar X-API-Key em cada chamada protegida. Nunca colocar uma chave real
+no código, prompt, variável NEXT_PUBLIC, URL, log, localStorage ou Git.
+Não solicite credenciais AWS. Não use proxy da Vercel nem Server Actions.
+
+Contrato, caminhos relativos à URL base:
+GET /saude: sem chave; 200 {"status":"ok"}.
+GET /equipamentos: 200 {"itens":[objeto,...],"total":n}.
+GET /equipamentos/{id}: 200 objeto, ou 404.
+POST /equipamentos: recebe os 4 campos abaixo, retorna 201 objeto com id
+  e cabeçalho Location. ID deve ser lido da resposta, nunca presumido.
+PUT /equipamentos/{id}: substitui os 4 campos; retorna 200 objeto.
+PATCH /equipamentos/{id}: altera um ou mais campos; retorna 200 objeto.
+DELETE /equipamentos/{id}: retorna 204 SEM corpo; não chamar json() nele.
+Objeto: {"id":1,"nome":"CLP-01","tipo":"clp",
+         "local":"Planta A","ativo":true}.
+Campos nome e local: strings de 1 a 80 caracteres, sem apenas espaços.
+tipo: sensor | clp | ihm | atuador | outro. ativo: booleano JSON.
+Nome único por grupo. Não enviar id no corpo. Não adicionar barra final.
+Não existe filtro de busca na API; se necessário filtre no cliente.
+Erros da aplicação: {"erro":"mensagem"}. Nginx também pode retornar HTML.
+Status 400 validação/JSON; 401 chave inválida;
+403 origem não permitida; 404 recurso inexistente; 409 nome duplicado;
+413 corpo grande; 415 Content-Type incorreto; 405 método não permitido.
+
+Telas/estados: conexão, tabela, cadastro, edição completa via PUT, alternar
+ativo via PATCH, leitura individual via GET e exclusão com confirmação.
+Mostrar carregamento, lista vazia, mensagens de erro e status HTTP.
+Exibir método, caminho e código da última operação, sem exibir a chave.
+Tratar 204 antes de fazer parse. Impedir clique duplicado. Renderizar dados
+como texto seguro. Não dizer que mudar ativo liga ou desliga máquinas.
+
+Mesma origem na EC2: /api dispensa configurar CORS adicional.
+Preview v0 pode ter outra origem. Não presuma que funcionará: a API precisa
+de certificado público confiável e permitir explicitamente essa origem.
+Se isso faltar, mostre orientação para testar a versão exportada na EC2.
+Não usar mode: 'no-cors' e não desativar segurança do navegador.
+Entregue instruções para npm run build e publicação de out/ no Nginx.

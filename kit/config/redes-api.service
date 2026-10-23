@@ -1,0 +1,21 @@
+[Unit]
+Description=API REST didatica de inventario
+After=network.target
+
+[Service]
+User=redesapi
+Group=redesapi
+WorkingDirectory=/opt/redes-api
+EnvironmentFile=/etc/redes-api.env
+ExecStart=/opt/redes-api/.venv/bin/gunicorn --bind 127.0.0.1:8000 --workers 1 --threads 4 --access-logfile - --error-logfile - app:create_app()
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/redes-api
+
+[Install]
+WantedBy=multi-user.target

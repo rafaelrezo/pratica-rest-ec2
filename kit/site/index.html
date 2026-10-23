@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Laboratório de Redes | Inventário didático</title>
+<style>
+body{font:18px/1.6 system-ui,sans-serif;margin:0;color:#183047;background:#edf3f8}
+main{max-width:900px;margin:8vh auto;padding:32px}header{color:#087e8b;font-weight:700}
+h1{font-size:clamp(32px,5vw,54px);line-height:1.1}article{background:white;padding:28px;border-radius:16px;margin:20px 0}
+a{color:#00687a}code{background:#e6eff5;padding:3px 7px}footer{font-size:15px}
+</style>
+<main>
+<header>IFES · Redes para Controle e Automação · 2026/2</header>
+<h1>Uma página. Duas práticas de redes.</h1>
+<p>Este portal é servido pelo Nginx em uma instância EC2 Ubuntu.</p>
+<article><h2>01 · HTTP e HTTPS</h2><p>Inspecione a requisição do documento no DevTools.
+Compare status, cabeçalhos, endereço, porta e certificado. HTML, CSS e JavaScript são arquivos estáticos.</p></article>
+<article><h2>02 · Inventário de equipamentos</h2><p>Use a API para cadastrar equipamentos fictícios.
+O campo “ativo” é apenas um dado do cadastro; ele não comanda nenhum equipamento.</p>
+<a href="painel.html">Abrir interface do CRUD →</a>
+<p>Antes da instalação do backend, as chamadas a <code>/api</code> podem retornar 502. Isso não impede a prática 1.</p></article>
+<footer>Laboratório didático isolado. Nenhum CLP ou processo real está conectado.</footer>
+</main>
+</html>

@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.venv/
+*.env
+*.pem
+*.key
+*.crt
+*.db
+*.sqlite*
+chaves*/
+entrega-grupos.csv
+redes-lab.url
+*.log

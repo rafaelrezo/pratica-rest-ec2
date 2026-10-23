@@ -1,0 +1,47 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[brazilian]{babel}
+\usepackage{lmodern}
+\usepackage{textcomp}
+\usepackage[margin=1.8cm,top=2.0cm,bottom=2.0cm,headheight=15pt]{geometry}
+\usepackage{xcolor,graphicx,booktabs,tabularx,array,enumitem,listings,fancyhdr,tikz}
+\usepackage[unicode,colorlinks=true,urlcolor=teal,linkcolor=teal,breaklinks=true]{hyperref}
+\usetikzlibrary{arrows.meta,positioning}
+\definecolor{azul}{HTML}{12334B}
+\definecolor{verde}{HTML}{007E87}
+\definecolor{suave}{HTML}{EDF3F7}
+\definecolor{cinza}{HTML}{455D6C}
+\renewcommand{\familydefault}{\sfdefault}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlength{\emergencystretch}{2em}
+\setlist{nosep,leftmargin=1.4em,itemsep=3pt,topsep=4pt}
+\renewcommand{\arraystretch}{1.25}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{cinza}IFES / REDES PARA CONTROLE E AUTOMAÇÃO}
+\fancyhead[R]{\small\color{verde}2026/2}
+\fancyfoot[L]{\small\color{cinza}\docshort}
+\fancyfoot[R]{\small\thepage\ / \pageref{fim}}
+\renewcommand{\headrulewidth}{0.3pt}
+\lstset{basicstyle=\ttfamily\small,backgroundcolor=\color{suave},
+ frame=single,rulecolor=\color{suave},framesep=6pt,columns=fullflexible,
+ keepspaces=true,showstringspaces=false,upquote=true,breaklines=true,breakatwhitespace=false,
+ aboveskip=7pt,belowskip=7pt,tabsize=2,
+ literate={á}{{\'a}}1 {à}{{\`a}}1 {ã}{{\~a}}1 {â}{{\^a}}1
+ {é}{{\'e}}1 {ê}{{\^e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ô}{{\^o}}1
+ {õ}{{\~o}}1 {ú}{{\'u}}1 {ç}{{\c c}}1 {Á}{{\'A}}1 {É}{{\'E}}1
+ {Ç}{{\c C}}1 {Ã}{{\~A}}1 {→}{{$\to$}}1}
+\newcommand{\capa}[3]{
+ {\small\color{verde}\bfseries LABORATÓRIO DE REDES\hfill #1}\par\vspace{0.6cm}
+ {\Huge\color{azul}\bfseries #2\par}\vspace{0.25cm}
+ {\Large\color{cinza}#3\par}\vspace{0.5cm}}
+\newcommand{\pagina}[2]{\newpage{\small\color{verde}\bfseries #1}\par
+ {\LARGE\color{azul}\bfseries #2\par}\vspace{0.2cm}}
+\newcommand{\sub}[1]{\par\vspace{0.15cm}{\large\color{verde}\bfseries #1}\par}
+\newcommand{\caixa}[2]{\par\vspace{4pt}\noindent\colorbox{suave}{\parbox{\dimexpr\linewidth-2\fboxsep\relax}{\textbf{\color{azul}#1}\par #2}}\par\vspace{4pt}}
+\newcommand{\fonte}[2]{{\footnotesize\color{cinza}Fonte: \href{#1}{#2}.}\par}
+\newcommand{\cmd}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\finalizar}{\label{fim}\end{document}}

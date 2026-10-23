@@ -1,0 +1,40 @@
+VALIDAÇÃO — REVISÃO AUTÔNOMA REST — 23/10/2026
+
+ALTERAÇÕES
+  Prática 2 centrada em REST e no consumo da mesma API por Postman e página
+  web pronta. O aluno não precisa programar, compilar frontend ou receber
+  chave docente. Artefatos preparados para distribuição por repositório/ZIP.
+  iniciar-lab.sh: prepara serviços, credenciais locais, página, TLS e banco;
+  descobre DNS/IP via IMDSv2 e aceita argumentos como alternativa.
+  validar-lab.sh: valida o serviço sem pedir credenciais manualmente.
+  Duas identidades g01/g02 permitem testar autorização na própria EC2.
+  Revisados guia docente e referências cruzadas da prática 1.
+
+VALIDAÇÃO EXECUTADA
+  bash -n aprovado nos scripts de início, instalação e validação.
+  Seis testes existentes do contrato Flask aprovados em Python 3.12.12,
+  Flask 3.1.2 e Gunicorn 23.0.0.
+  Validador executado contra API real Gunicorn com HTTPS em loopback:
+    GET saúde 200; GET sem chave 401; POST 201 com Location;
+    GET item 200; PATCH 200 e valor confirmado; PUT incompleto 400;
+    GET com segunda identidade 404; DELETE 204 sem corpo; GET final 404.
+  Teste de ensaio confirmou limpeza do registro criado pelo validador,
+  ausência de chaves no log de saída e recusa de URL HTTP no validador.
+  Gerador: chaves distintas, arquivos 0600 e recusa de sobrescrita.
+  OpenSSL: verificação de hostname/IP corretos aceita; incorretos rejeitados.
+  Os diretórios de ensaio eram temporários; não integram o kit distribuído.
+  Documentação primária conferida: AWS IMDSv2, Python secrets, Flask/Gunicorn,
+  Nginx proxy_pass e OpenSSL x509.
+  Três PDFs compilados duas vezes; sem erros ou Overfull. Prática 2 com
+  14 páginas, guia com 9 e prática 1 com 14. Paginação resolvida.
+  Páginas da prática 2 renderizadas e inspecionadas visualmente.
+
+LIMITES DESTA REVISÃO
+  Nenhuma EC2 ou recurso pago foi criado. Não foi executada a instalação
+  completa APT/systemd em Ubuntu 24.04 nem a descoberta no IMDS real.
+  O ensaio HTTPS do validador usou Gunicorn em loopback, sem o proxy Nginx.
+  Não houve ensaio no Postman Desktop ou importação TLS no navegador.
+  O backend e a configuração Nginx mantêm o contrato anterior; o novo
+  início automatiza a preparação que antes era feita pelo professor.
+  Os registros anteriores abaixo descrevem revisões históricas, não
+  evidências novas da execução integral na AWS.
