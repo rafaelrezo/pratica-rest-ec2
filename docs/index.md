@@ -4,6 +4,10 @@ Você vai iniciar um inventário pronto de equipamentos fictícios das Plantas A
 
 **Este é o roteiro completo.** Siga as etapas na ordem do menu. Os arquivos, as instruções e as atividades estão neste repositório; nenhum PDF é necessário para realizar a prática.
 
+[![APIs REST conectando aplicações à indústria, a cidades inteligentes e à agricultura](assets/images/ilustracao.png)](assets/images/ilustracao.png)
+
+*Panorama de integração por APIs REST. Clique na ilustração para abrir em tamanho original.* Os endpoints e a autenticação mostrados são exemplos de outros contextos; neste laboratório, usaremos o inventário em `/api/equipamentos` e o cabeçalho `X-API-Key`.
+
 ## O que você vai aprender
 
 - Relacionar recursos, URLs, métodos HTTP e representações JSON.

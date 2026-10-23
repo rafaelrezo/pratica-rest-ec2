@@ -4,6 +4,10 @@
 
 Inicie uma API e uma aplicação web prontas e investigue recursos, métodos HTTP, JSON, status, persistência e autorização. Postman e navegador utilizam o mesmo inventário fictício das Plantas A/B/C. Não é necessário programar para realizar a prática.
 
+[![Ilustração de APIs REST conectando aplicações, indústria, cidades inteligentes e agricultura](docs/assets/images/ilustracao.png)](docs/assets/images/ilustracao.png)
+
+Panorama de aplicações de APIs REST. Clique na ilustração para abri-la em tamanho original.
+
 Todo o roteiro está neste repositório, em Markdown, e é publicado automaticamente como documentação navegável. A prática pode ser concluída sem abrir PDF. Os arquivos PDF/LaTeX da entrega inicial permanecem como histórico.
 
 O percurso principal usa **HTTP, sem configuração de certificados**. Trabalhe somente com dados/chaves didáticos e permita a porta 80 apenas para seu IP ou rede autorizada. HTTPS fica como aprofundamento opcional; REST não depende de configurar TLS.
