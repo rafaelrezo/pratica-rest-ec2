@@ -27,14 +27,14 @@ sudo systemctl status redes-api --no-pager
 
 **Esperado:** 200, JSON de saúde e serviço `active (running)`. Se falhar, consulte `sudo journalctl -u redes-api -n 30 --no-pager`. Recupere o serviço com `sudo systemctl start redes-api` se estiver parado. Se houver erro de instalação/configuração, leia o primeiro erro do script antes de reexecutar o início.
 
-**Teste 2 — Nginx com HTTPS dentro da EC2. Terminal A:**
+**Teste 2 — Nginx HTTP dentro da EC2. Terminal A:**
 
 ```bash
 sudo nginx -t
-curl --cacert ~/redes.crt --resolve SEU_DNS_EC2:443:127.0.0.1 -i https://SEU_DNS_EC2/api/saude
+curl -i http://127.0.0.1/api/saude
 ```
 
-Substitua **as duas ocorrências** de `SEU_DNS_EC2`. O `--resolve` leva a conexão ao loopback, mantendo o DNS real na verificação TLS. Espere configuração válida e 200. Se a aplicação responde no teste 1, mas o proxy falha, consulte:
+Esse teste passa pelo Nginx da própria EC2, na porta 80. Espere configuração válida e 200. Se a aplicação responde no teste 1, mas o proxy falha, consulte:
 
 ```bash
 sudo systemctl status nginx --no-pager
@@ -44,10 +44,10 @@ sudo tail -n 30 /var/log/nginx/error.log
 **Teste 3 — acesso a partir do seu computador. Terminal B:**
 
 ```bash
-curl --cacert ~/redes-rest/redes.crt -i https://SEU_DNS_EC2/api/saude
+curl -i http://SEU_DNS_EC2/api/saude
 ```
 
-Espere 200. Se os testes 1 e 2 passam e este dá timeout, confira nome/IP atuais, entrada 443, caminho público e rede de origem. Se der erro de certificado, siga a etapa 6.6.
+Espere 200. Se os testes 1 e 2 passam e este dá timeout, confira nome/IP atuais, entrada 80 para seu IP atual, caminho público e rede de origem. Se o endereço mudou, siga a etapa 6.6.
 
 **Verifique:** o que cada teste acrescenta ao anterior? Um ping responde se a aplicação REST consegue criar um registro?
 
@@ -75,7 +75,7 @@ Espere 200. Se os testes 1 e 2 passam e este dá timeout, confira nome/IP atuais
 5. Para recuperar, volte a **raw → JSON** e ao `Content-Type: application/json`; use os quatro campos da [etapa de criação](04-investigar.md#44-criar-um-recurso-por-post), com um nome novo.
 6. Espere **201**, anote o ID e exclua somente esse registro de ensaio com g01. DELETE deve retornar 204.
 
-**Verifique:** qual a diferença entre “JSON incompleto” e “formato não aceito”? Por que o cliente precisa conhecer o contrato, além de alcançar a porta 443?
+**Verifique:** qual a diferença entre “JSON incompleto” e “formato não aceito”? Por que o cliente precisa conhecer o contrato, além de alcançar a porta 80?
 
 ## 6.5. Provocar e recuperar 502
 
@@ -106,25 +106,25 @@ Espere 200. Se os testes 1 e 2 passam e este dá timeout, confira nome/IP atuais
 
 Se o teste for interrompido no meio, reconecte e execute primeiro `sudo systemctl start redes-api` para recuperar o ambiente.
 
-## 6.6. Corrigir endereço ou certificado
+## 6.6. Corrigir mudança de endereço
 
-1. No console, confira o DNS e IPv4 públicos atuais da instância. Depois de **parar/iniciar**, eles podem ter mudado.
-2. Se mudaram, reconecte pelo novo DNS e execute `bash kit/iniciar-lab.sh` dentro de `~/pratica-rest-ec2`. O script atualiza o certificado se os endereços mudaram ou se ele estiver próximo do vencimento. A validade didática é de sete dias.
-3. Repita a [cópia e comparação do certificado](03-acessar.md#31-conferir-o-certificado-no-servidor).
-4. Atualize `baseUrl` nos dois ambientes Postman; mantenha `/api` como base da página. Atualize o endereço aberto no navegador e a confiança no novo certificado nos clientes.
-5. Repita saúde por HTTPS e uma listagem autenticada.
+1. No console, confira o DNS e o IPv4 públicos atuais da instância. Depois de **parar/iniciar**, eles podem mudar.
+2. Se mudaram, reconecte pelo novo endereço e execute `bash kit/iniciar-lab.sh` dentro de `~/pratica-rest-ec2`. A URL em `~/redes-lab.url` será atualizada.
+3. Atualize `baseUrl` nos dois ambientes Postman para `http://NOVO_ENDERECO`, sem `/api`. Abra a página pelo novo endereço e mantenha `/api` no campo da interface.
+4. Confira se o Security Group permite TCP 80 a partir do IP atual do seu computador.
+5. Repita saúde HTTP e listagem autenticada.
 
-**Esperado:** saúde 200, confiança TLS válida para o nome atual e listagem 200. Chaves e banco são preservados ao repetir o script; a página de referência é republicada.
+**Esperado:** saúde 200 e listagem 200. Banco e chaves permanecem ao repetir o script; a página de referência é republicada.
 
-**Verifique:** por que atualizar apenas a URL pode não bastar? Quais dados devem permanecer mesmo que o endereço público mude?
+**Verifique:** quais valores mudaram no cliente? Por que essa mudança de endereço não exige criar novamente os cadastros?
 
 ## 6.7. Se apenas o navegador falhar
 
 1. Confirme no Postman que saúde e listagem com g01 respondem.
-2. Confira se a página está em `https://SEU_DNS_EC2/painel.html`, e não `file://` ou uma prévia em outro domínio.
+2. Confira se a página está em `http://SEU_DNS_EC2/painel.html`, e não `file://` ou uma prévia em outro domínio.
 3. Mantenha o campo **URL base da API = `/api`** e use a chave de g01.
 4. Abra **Console** e **Network** no navegador; clique **Conectar / listar** e procure a requisição da API.
-5. Se não houver chamada e a página pedir uma chave, preencha o campo. Se houver resposta 401, confira a chave. Se houver falha TLS, confira a confiança do navegador. Se houver origem externa/OPTIONS rejeitado, volte à página publicada na própria EC2, que é o caminho desta prática.
+5. Se não houver chamada e a página pedir uma chave, preencha o campo. Se houver resposta 401, confira a chave. Se o navegador tentar forçar HTTPS, use HTTP para o endereço deste laboratório. Se houver origem externa/OPTIONS rejeitado, volte à página publicada na própria EC2, que é o caminho desta prática.
 
 **Esperado:** GET 200 e listagem na tela. Não exponha a porta 8000 nem desative a segurança do navegador para contornar esse problema.
 

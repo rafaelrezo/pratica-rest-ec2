@@ -2,6 +2,48 @@
 
 **Objetivo:** prever, executar e explicar o efeito de requisições sobre um recurso. Você trabalhará no **Postman do seu computador**, com g01, enquanto a API roda na EC2.
 
+## Fundamentos: o que significa REST nesta prática?
+
+**REST — Representational State Transfer — é um estilo de arquitetura** para organizar interações entre clientes e serviços. Neste laboratório, você observa essas interações por HTTP. REST não é uma linguagem de programação, um formato de arquivo ou um sinônimo de CRUD.
+
+### Recursos e representações
+
+O **recurso** é algo que a API identifica e permite consultar/manipular. Aqui, o cadastro de um equipamento é um recurso: `/api/equipamentos/7` identifica um item; `/api/equipamentos` identifica a coleção.
+
+A **representação** é a descrição transferida na mensagem. O JSON com `id`, `nome`, `tipo`, `local` e `ativo` representa um cadastro. A página transforma essa representação em uma linha da tabela; o Postman exibe o JSON diretamente. REST não exige JSON: esse é o formato escolhido por este contrato.
+
+### Princípios que você poderá observar
+
+| Princípio | O que significa | Exemplo no kit |
+| --- | --- | --- |
+| Cliente e servidor | Interface e armazenamento têm responsabilidades distintas. | Postman/página enviam pedidos; a API mantém os cadastros. |
+| Interface uniforme | Identificação de recursos, representações e mensagens permitem uma interação consistente. | URLs identificam coleção/item; método, cabeçalhos, corpo e status descrevem a operação. |
+| Requisições sem estado de sessão | Cada requisição leva as informações necessárias à sua interpretação. | Toda chamada protegida envia sua chave; o servidor não depende de uma chamada anterior de login. |
+| Cacheabilidade | A resposta informa se pode ser armazenada/reutilizada por caches. | O backend envia `Cache-Control: no-store`; a resposta não deve ser guardada em cache. Isso não impede o banco persistente. |
+| Organização em camadas | Intermediários podem participar da comunicação. | O cliente fala com Nginx; o proxy encaminha para a aplicação. |
+
+Essas ideias derivam da [definição original de REST de Roy Fielding](https://ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm). O estilo também admite envio de código ao cliente como restrição opcional. O kit é um CRUD didático inspirado em REST: ele não exercita a navegação por hipermídia, na qual links das representações orientam próximas ações, nem demonstra sozinho todas as restrições do estilo.
+
+### Método HTTP, efeito e resposta são coisas distintas
+
+| Método | Intenção neste contrato | O que observar ao repetir |
+| --- | --- | --- |
+| GET | Consultar uma representação. | Não cria ou altera o cadastro solicitado. |
+| POST | Pedir a criação de um item na coleção. | Não suponha idempotência; neste kit, repetir o nome conflita com a regra de unicidade. |
+| PUT | Substituir a representação editável de um item existente. | Repetir a mesma substituição mantém o mesmo efeito final. |
+| PATCH | Aplicar uma alteração parcial. | A idempotência depende da operação: atribuir `ativo=false` difere de pedir para inverter o valor. |
+| DELETE | Remover o item. | O efeito final continua sendo ausência, mesmo que os status de chamadas sucessivas sejam diferentes. |
+
+**Idempotência** se refere ao efeito pretendido de repetir uma operação; não exige respostas idênticas. **Segurança do método**, na semântica HTTP, significa que o cliente não pede mudança de estado: GET é seguro; DELETE não é, mesmo sendo idempotente. Isso não é uma classificação de criptografia ou autenticação. [Semântica dos métodos na RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html#name-method-definitions).
+
+Um status responde a uma requisição delimitada: 201 indica criação; 204 indica sucesso sem conteúdo; 401 indica ausência de credencial válida; 404 pode indicar item indisponível naquele escopo. Para verificar o estado do cadastro após uma escrita, faça outra consulta GET.
+
+**Verifique antes de executar:** onde está o recurso e onde aparece sua representação? A ausência de sessão impede persistir dados? Trocar HTTP por HTTPS mudaria os caminhos e as operações do contrato? No primeiro GET, procure `Cache-Control` nos cabeçalhos da resposta e relacione seu valor com a tabela acima.
+
+??? note "Confira a ideia central"
+
+    O recurso é mantido pelo servidor; JSON e tabela são formas de representá-lo. Chamadas sem sessão de usuário podem consultar um banco persistente. HTTPS acrescenta proteção ao transporte, enquanto o contrato de recursos, métodos e representações pode permanecer o mesmo.
+
 ## 4.1. Ler o contrato antes do primeiro cadastro
 
 Um **recurso** é identificado por uma URL: `/api/equipamentos` é a coleção e `/api/equipamentos/7` é um item. JSON é a **representação** enviada ou recebida; HTTP define métodos e status. REST é um estilo de arquitetura. Este CRUD aplica parte de suas ideias; JSON e métodos HTTP, isoladamente, não demonstram todas as restrições de REST.

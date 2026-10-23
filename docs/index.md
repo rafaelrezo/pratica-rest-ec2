@@ -10,7 +10,7 @@ Você vai iniciar um inventário pronto de equipamentos fictícios das Plantas A
 - Criar, consultar, alterar e excluir cadastros, verificando o efeito de cada requisição.
 - Interpretar status de sucesso e erro, autenticação e autorização.
 - Mostrar que uma interface web transforma ações do usuário em chamadas à API.
-- Distinguir problemas de rede, certificado, proxy e aplicação.
+- Distinguir problemas de rede, proxy, autenticação e aplicação.
 
 **Organização sugerida:** duplas/trios, uma EC2 por equipe. Reserve 20–30 minutos para iniciar o ambiente pela primeira vez e cerca de 120 minutos para investigar os serviços. Você utilizará programas e scripts prontos; as atividades não exigem implementar o backend ou compilar uma interface.
 
@@ -30,7 +30,7 @@ Você manterá **dois terminais**: A conectado à EC2 e B no seu computador. Nã
 | --- | --- |
 | [1. Preparar e conectar](01-preparar.md) | Repositório baixado no seu computador e sessão SSH aberta. |
 | [2. Iniciar na EC2](02-iniciar.md) | Scripts terminam e validação mostra `OK`. |
-| [3. Acessar](03-acessar.md) | Certificado conferido, Postman configurado e página aberta. |
+| [3. Acessar](03-acessar.md) | Postman configurado e página HTTP aberta. |
 | [4. Investigar REST](04-investigar.md) | Operações HTTP executadas e efeitos confirmados por GET. |
 | [5. Usar a aplicação web](05-aplicacao-web.md) | Mesmo cadastro acessado pelo Postman e pela página. |
 | [6. Diagnosticar](06-diagnosticar.md) | Falhas previstas identificadas, explicadas e recuperadas. |
@@ -44,8 +44,10 @@ Tenha uma conta AWS autorizada para criar/usar uma EC2 Ubuntu Server 24.04 LTS, 
 
 Nas abas, escolha **WSL**, **Ubuntu** ou **macOS** conforme o sistema do seu computador. Quem usa Windows com Ubuntu no WSL deve escolher **WSL** e executar os comandos naquele terminal.
 
+O percurso usa **HTTP na porta 80** para concentrar o trabalho em REST. HTTP transmite os dados sem criptografia: use somente dados e chaves de laboratório e restrinja o Security Group ao seu IP/rede autorizada. [HTTPS é um aprofundamento opcional](https-opcional.md).
+
 O campo `ativo` é um dado do inventário: não liga ou desliga máquinas. Todos os registros são fictícios.
 
 ## O que já foi validado
 
-O contrato da API, o validador em HTTPS local e a construção desta documentação têm verificações registradas. A instalação integral em uma EC2 real e o uso do Postman nas três plataformas ainda precisam de ensaio. Consulte o [estado da validação](validacao.md); documentação completa e validação completa na AWS são condições diferentes.
+O contrato da API, o validador em HTTP local e a construção desta documentação têm verificações registradas. A instalação integral em uma EC2 real e o uso do Postman nas três plataformas ainda precisam de ensaio. Consulte o [estado da validação](validacao.md); documentação completa e validação completa na AWS são condições diferentes.

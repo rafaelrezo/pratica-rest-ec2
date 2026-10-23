@@ -13,17 +13,21 @@ from urllib.request import Request, urlopen
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("base_url", help="https://DNS_PUBLICO_EC2, sem /api")
-    parser.add_argument("--certificado", type=Path, default=Path.home() / "redes.crt")
+    parser.add_argument("base_url", help="http://DNS_PUBLICO_EC2, sem /api")
+    parser.add_argument("--certificado", type=Path,
+                        help="Opcional: CA para ensaio HTTPS, fora do percurso principal.")
     parser.add_argument("--chaves", type=Path,
                         default=Path.home() / "chaves-redes/entrega-grupos.csv")
     args = parser.parse_args()
     base = args.base_url.rstrip("/")
     url = urlsplit(base)
-    if url.scheme != "https" or not url.hostname or url.path or url.query or url.fragment or url.username:
-        parser.error("Use https://DNS_PUBLICO_EC2, sem caminho, credencial ou query.")
+    if url.scheme not in ("http", "https") or not url.hostname or url.path or url.query or url.fragment or url.username:
+        parser.error("Use http://DNS_PUBLICO_EC2, sem caminho, credencial ou query.")
+    if args.certificado and url.scheme != "https":
+        parser.error("--certificado so se aplica a HTTPS; o roteiro HTTP nao precisa desse arquivo.")
     try:
-        context = ssl.create_default_context(cafile=str(args.certificado))
+        context = (ssl.create_default_context(cafile=str(args.certificado) if args.certificado else None)
+                   if url.scheme == "https" else None)
         with args.chaves.open(newline="") as file:
             keys = {row["grupo"]: row["chave"] for row in csv.DictReader(file)}
         primary, other = keys["g01"], keys["g02"]
@@ -76,11 +80,11 @@ def main():
         request("DELETE", path, 204)
         request("GET", path, 404)
         path = None
-        print("OK: HTTPS, chave, criação, leitura, alteração, isolamento e exclusão.")
+        print(f"OK: {url.scheme.upper()}, chave, criação, leitura, alteração, isolamento e exclusão.")
         print("Agora repita as operações no Postman e na página, observando as mensagens HTTP.")
     except (OSError, URLError, ValueError, KeyError, RuntimeError) as exc:
         # Não imprimir Request/headers: os segredos devem ficar fora dos logs.
-        print(f"FALHA ({type(exc).__name__}): confira URL, certificado, serviço e contrato.", file=sys.stderr)
+        print(f"FALHA ({type(exc).__name__}): confira URL, serviço, credencial e contrato.", file=sys.stderr)
         failed = True
     finally:
         if path:

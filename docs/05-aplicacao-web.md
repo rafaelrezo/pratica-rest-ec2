@@ -4,29 +4,34 @@
 
 ## 5.1. Localizar cada componente
 
-```text
-Seu computador                            EC2 da equipe
-
-Postman ------------------ HTTPS -------> Nginx :443
-Navegador com a página ---- HTTPS ------->    |
-                                             +-- /painel.html: arquivo da página
-                                             |
-                                             +-- /api/...: proxy para
-                                                 Gunicorn + Flask
-                                                 127.0.0.1:8000
-                                                      |
-                                                 SQLite em disco
+```mermaid
+flowchart TB
+    subgraph PC["Computador do aluno"]
+        B["Navegador<br/>Página e JavaScript"]
+        P["Postman"]
+    end
+    subgraph EC2["EC2 da equipe"]
+        N["Nginx<br/>HTTP na porta 80"]
+        A["API REST<br/>Gunicorn e Flask<br/>127.0.0.1:8000"]
+        D[("SQLite<br/>Cadastros em disco")]
+    end
+    B <-->|"Página /painel.html<br/>e chamadas /api/..."| N
+    P <-->|"Requisições e respostas<br/>HTTP /api/..."| N
+    N <-->|"Proxy HTTP<br/>em loopback"| A
+    A <-->|"Consultar e gravar"| D
 ```
 
-O Nginx termina TLS. A chamada interna ao backend usa HTTP em loopback. O JavaScript da interface roda no **navegador do usuário** e chama a API; quem valida as requisições e grava os cadastros é o backend na EC2.
+O diagrama é renderizado a partir de Mermaid. [Baixe o código `.mmd`](diagramas/arquitetura-rest.mmd) para reutilizar em outro renderizador.
 
-**Verifique:** quem armazena o inventário? Se fecharmos a aba, o banco é apagado? O Nginx pode ler o JSON após terminar TLS?
+O Nginx entrega a página e encaminha as chamadas `/api/...` para o backend por HTTP em loopback. O JavaScript da interface roda no **navegador do usuário** e chama a API; quem valida as requisições e grava os cadastros é o backend na EC2.
+
+**Verifique:** quem armazena o inventário? Se fecharmos a aba, o banco é apagado? Qual caminho do diagrama muda quando trocamos o navegador pelo Postman?
 
 ## 5.2. Observar a primeira chamada da página
 
 **Onde:** navegador no seu computador.
 
-1. Abra `https://SEU_DNS_EC2/painel.html` e confira que a confiança TLS está preparada.
+1. Abra `http://SEU_DNS_EC2/painel.html`, com o endereço real da sua EC2.
 2. Mantenha **URL base da API = `/api`**. Informe a chave de **g01**.
 3. Abra as ferramentas de desenvolvimento: no Windows/Ubuntu, `F12` ou `Ctrl+Shift+I`; no macOS, `Command+Option+I`. Se o navegador não abrir, use seu menu de ferramentas do desenvolvedor.
 4. Selecione **Network/Rede**, deixe o filtro em **All/Todos** ou **Fetch/XHR** e limpe a lista de requisições.
@@ -73,11 +78,11 @@ Depois de salvar, a página pode fazer um GET automático para atualizar a tabel
 
 **Verifique:** por que 200 na listagem depois da exclusão não contradiz 404 no item? Por que a interface precisa tratar uma resposta sem JSON?
 
-## 5.6. Explicar origem, HTTPS e autenticação
+## 5.6. Explicar origem e autenticação
 
-Uma origem reúne **esquema, host e porta**. A página em `https://SEU_DNS_EC2` usa `/api` na mesma origem. A porta interna 8000 não aparece na URL pública.
+Uma origem reúne **esquema, host e porta**. A página em `http://SEU_DNS_EC2` usa `/api` na mesma origem. A porta interna 8000 não aparece na URL pública.
 
-Se outro site tentar consumir essa API pelo navegador, poderá precisar de uma política CORS que autorize a origem exata. O Postman Desktop não impõe essa mesma política de navegador. CORS não substitui autenticação nem corrige um certificado sem confiança ou uma página HTTPS tentando chamar uma API HTTP.
+Se outro site tentar consumir essa API pelo navegador, poderá precisar de uma política CORS que autorize a origem exata. O Postman Desktop não impõe essa mesma política de navegador. CORS não substitui autenticação ou criptografia; nesta prática, use a página da própria EC2.
 
 **Verifique:** por que funcionar no Postman não garante que qualquer página conseguirá chamar a API? Por que mudar para `mode: 'no-cors'` não é uma solução para ler as respostas?
 
@@ -87,7 +92,7 @@ Se outro site tentar consumir essa API pelo navegador, poderá precisar de uma p
 
     - O navegador executa o JavaScript e envia a requisição; o backend valida a credencial e o corpo, consulta/grava o banco e responde.
     - Ler no Postman o ID criado pela página comprova que ambos acessam o mesmo recurso. Atualizar a tela apenas pede outra representação ao servidor.
-    - O Nginx termina TLS; cliente e servidor podem ver os dados que processam. HTTPS protege o trecho de transporte, não esconde a requisição de seu próprio usuário.
-    - CORS é uma política de acesso entre origens aplicada pelo navegador; não é a chave da API nem uma correção para erro TLS.
+    - No caminho pelo navegador, o Nginx também entrega os arquivos da interface. As operações do Postman e da página alcançam a mesma API e o mesmo banco.
+    - CORS é uma política de acesso entre origens aplicada pelo navegador; não é a chave da API nem criptografia do transporte.
 
 Avance para [6. Diagnosticar](06-diagnosticar.md).

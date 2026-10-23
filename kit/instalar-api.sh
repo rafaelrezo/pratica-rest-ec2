@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Executar como ubuntu em EC2 Ubuntu 24.04 dedicada ao laboratório.
-# Instala somente o backend; Nginx/TLS são configurados no roteiro.
+# Instala somente o backend; iniciar-lab.sh configura o Nginx HTTP.
 set -euo pipefail
 KIT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 if [[ "$EUID" -eq 0 ]]; then
@@ -26,4 +26,4 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now redes-api
 sudo systemctl restart redes-api
 echo 'Backend instalado. Confira: curl -i http://127.0.0.1:8000/api/saude'
-echo 'O iniciar-lab.sh configura Nginx e HTTPS e valida o caminho completo.'
+echo 'O iniciar-lab.sh configura Nginx HTTP e valida o caminho completo.'

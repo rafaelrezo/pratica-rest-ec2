@@ -3,8 +3,8 @@
 # Uso: bash kit/iniciar-lab.sh (descobre os enderecos via IMDSv2)
 set -euo pipefail
 
-if [[ "${1:-}" == '--help' || ( "$#" -ne 0 && "$#" -ne 2 ) ]]; then
-  echo 'Uso: bash kit/iniciar-lab.sh [DNS_PUBLICO_EC2 IPV4_PUBLICO]'
+if [[ "${1:-}" == '--help' || "$#" -gt 2 ]]; then
+  echo 'Uso: bash kit/iniciar-lab.sh [DNS_PUBLICO_OU_IPV4]'
   echo 'Use uma EC2 Ubuntu 24.04 dedicada. Execute como ubuntu, sem sudo no script inteiro.'
   [[ "${1:-}" == '--help' ]] && exit 0
   exit 1
@@ -36,34 +36,36 @@ try:
         req = Request(base + 'meta-data/' + name,
                       headers={'X-aws-ec2-metadata-token': token})
         with opener.open(req, timeout=3) as response:
-            print(response.read().decode())
+            address = response.read().decode().strip()
+        if address:
+            print(address)
+            break
 except OSError:
-    sys.exit('Nao foi possivel descobrir DNS/IP. Use: bash kit/iniciar-lab.sh DNS_PUBLICO IPV4_PUBLICO')
+    sys.exit('Nao foi possivel descobrir o endereco. Use: bash kit/iniciar-lab.sh DNS_PUBLICO_OU_IPV4')
 PY
   ) || exit 1
-  mapfile -t LAB_ADDRESSES <<< "$LAB_DISCOVERY"
-  LAB_DNS="${LAB_ADDRESSES[0]:-}"
-  LAB_IP="${LAB_ADDRESSES[1]:-}"
+  LAB_HOST="$LAB_DISCOVERY"
 else
-  LAB_DNS="$1"
-  LAB_IP="$2"
+  # O segundo argumento antigo (IPv4) continua aceito para compatibilidade.
+  LAB_HOST="$1"
 fi
 # Validar marcadores antes de instalar pacotes ou alterar configuracoes.
-python3 - "$LAB_DNS" "$LAB_IP" <<'PY'
+python3 - "$LAB_HOST" <<'PY'
 import ipaddress
 import re
 import sys
-dns, ip = sys.argv[1:]
-labels = dns.split('.')
-if (len(labels) < 2 or len(dns) > 253
+host = sys.argv[1]
+try:
+    ipaddress.IPv4Address(host)
+    sys.exit(0)
+except ValueError:
+    pass
+labels = host.split('.')
+if (len(labels) < 2 or len(host) > 253
         or any(not re.fullmatch(r'[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?', x)
                for x in labels)
-        or dns == 'SEU_DNS_EC2'):
+        or host == 'SEU_DNS_EC2'):
     sys.exit('Copie o DNS publico real do console, sem esquema, barra ou caminho.')
-try:
-    ipaddress.IPv4Address(ip)
-except ValueError:
-    sys.exit('Copie o IPv4 publico real do console AWS.')
 PY
 
 if sudo test -e /etc/redes-api.env; then
@@ -83,7 +85,7 @@ fi
 
 echo 'Preparando o kit pronto: Nginx, API, banco e credenciais locais...'
 sudo apt update
-sudo apt install -y nginx curl openssl python3-venv
+sudo apt install -y nginx curl python3-venv
 if [[ ! -f "$LAB_KEYS_DIR/redes-api.env" ]]; then
   python3 "$KIT_DIR/api/gerar_chaves.py" --grupos 2 --saida "$LAB_KEYS_DIR"
 fi
@@ -92,23 +94,7 @@ bash "$KIT_DIR/instalar-api.sh"
 
 sudo install -d -m 755 /var/www/redes
 sudo install -m 644 "$KIT_DIR/site/index.html" "$KIT_DIR/site/painel.html" /var/www/redes/
-sudo install -d -m 700 /etc/nginx/tls
-# Reutilizar certificado valido para estes enderecos; renovar se necessario.
-if ! { sudo test -f /etc/nginx/tls/redes.key &&
-       sudo openssl x509 -in /etc/nginx/tls/redes.crt -noout -checkend 86400 &&
-       sudo openssl x509 -in /etc/nginx/tls/redes.crt -noout -checkhost "$LAB_DNS" &&
-       sudo openssl x509 -in /etc/nginx/tls/redes.crt -noout -checkip "$LAB_IP"; } >/dev/null 2>&1; then
-  sudo openssl req -x509 -nodes -newkey rsa:2048 -days 7 \
-    -keyout /etc/nginx/tls/redes.key -out /etc/nginx/tls/redes.crt \
-    -subj '/CN=Laboratorio de Redes' \
-    -addext "subjectAltName=DNS:$LAB_DNS,IP:$LAB_IP" \
-    -addext 'basicConstraints=critical,CA:TRUE' \
-    -addext 'keyUsage=critical,digitalSignature,keyEncipherment,keyCertSign' \
-    -addext 'extendedKeyUsage=serverAuth'
-fi
-sudo chmod 600 /etc/nginx/tls/redes.key
-sudo chmod 644 /etc/nginx/tls/redes.crt
-sudo install -m 644 "$KIT_DIR/config/redes-autoassinado.conf" /etc/nginx/sites-available/redes
+sudo install -m 644 "$KIT_DIR/config/redes-http.conf" /etc/nginx/sites-available/redes
 if [[ -L /etc/nginx/sites-enabled/default ]]; then
   sudo unlink /etc/nginx/sites-enabled/default
 fi
@@ -116,21 +102,17 @@ sudo ln -sfn /etc/nginx/sites-available/redes /etc/nginx/sites-enabled/redes
 sudo nginx -t
 sudo systemctl enable --now nginx
 sudo systemctl reload nginx
-sudo install -o ubuntu -g ubuntu -m 644 /etc/nginx/tls/redes.crt "$HOME/redes.crt"
 # UFW, se ativo, continua sendo configurado pelo dono da instancia.
-echo 'Validando backend e HTTPS localmente...'
+echo 'Validando backend e HTTP pelo Nginx localmente...'
 curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 1 \
   http://127.0.0.1:8000/api/saude
 echo
-curl --fail --silent --show-error --cacert "$HOME/redes.crt" \
-  --resolve "$LAB_DNS:443:127.0.0.1" "https://$LAB_DNS/api/saude"
+curl --fail --silent --show-error http://127.0.0.1/api/saude
 echo
-openssl x509 -in "$HOME/redes.crt" -noout -fingerprint -sha256
 umask 077
-printf 'https://%s\n' "$LAB_DNS" > "$HOME/redes-lab.url"
-echo "Kit iniciado: https://$LAB_DNS/painel.html"
-echo "Postman baseUrl: https://$LAB_DNS"
-echo "Certificado publico: $HOME/redes.crt"
+printf 'http://%s\n' "$LAB_HOST" > "$HOME/redes-lab.url"
+echo "Kit iniciado: http://$LAB_HOST/painel.html"
+echo "Postman baseUrl: http://$LAB_HOST"
 echo "Credenciais privadas: $LAB_KEYS_DIR/entrega-grupos.csv"
 echo 'g01: CRUD principal; g02: identidade de teste para validar isolamento.'
 echo 'Consulte o CSV no seu terminal privado; nao inclua chaves no relatorio.'

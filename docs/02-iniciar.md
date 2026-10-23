@@ -28,14 +28,14 @@ Há dois clones: o do seu computador fornece os JSON ao Postman; o da EC2 fornec
 bash kit/iniciar-lab.sh
 ```
 
-Execute como `ubuntu`; o script chama `sudo` quando necessário. Aguarde a conclusão. Ele instala pacotes, inicia a API e o banco, publica a página e ativa HTTPS. O endereço é obtido por IMDSv2, os metadados da própria EC2.
+Execute como `ubuntu`; o script chama `sudo` quando necessário. Aguarde a conclusão. Ele instala pacotes, inicia a API e o banco, publica a página e a API por HTTP na porta 80. O endereço é obtido por IMDSv2, os metadados da própria EC2.
 
-**Esperado ao final:** duas respostas de saúde com `{"status":"ok"}`, a URL terminada em `/painel.html`, o endereço para `baseUrl` e a localização do certificado e das credenciais. Os pacotes podem levar alguns minutos na primeira execução.
+**Esperado ao final:** duas respostas de saúde com `{"status":"ok"}`, a URL terminada em `/painel.html`, o endereço para `baseUrl` e a localização das credenciais. Os pacotes podem levar alguns minutos na primeira execução.
 
-Se aparecer uma mensagem de falha, pare nessa etapa. Para falha de descoberta de DNS/IP, copie os valores públicos atuais do console e execute:
+Se aparecer uma mensagem de falha, pare nessa etapa. Para falha de descoberta de DNS/IP, copie o DNS ou o IPv4 público atual do console e execute:
 
 ```bash
-bash kit/iniciar-lab.sh SEU_DNS_EC2 IP_PUBLICO
+bash kit/iniciar-lab.sh SEU_DNS_EC2
 ```
 
 Se o Ubuntu da EC2 já tiver UFW ativo, consulte `sudo ufw status`. Antes de liberar o acesso web, preserve SSH:
@@ -43,10 +43,10 @@ Se o Ubuntu da EC2 já tiver UFW ativo, consulte `sudo ufw status`. Antes de lib
 ```bash
 # Somente se o UFW estiver ativo:
 sudo ufw allow OpenSSH
-sudo ufw allow 'Nginx Full'
+sudo ufw allow 'Nginx HTTP'
 ```
 
-**Verifique:** quais serviços foram preparados pelo script? Onde termina o HTTPS? Por que o backend usa `127.0.0.1:8000`?
+**Verifique:** quais serviços foram preparados pelo script? Qual componente recebe as chamadas na porta 80? Por que o backend usa `127.0.0.1:8000`?
 
 ## 2.3. Executar a validação básica
 
@@ -79,9 +79,9 @@ O CSV tem cabeçalho `grupo,chave` e duas linhas. Use a chave da linha **g01** n
 | --- | --- |
 | `chave-ec2.pem`, no seu computador | Autenticar seu acesso SSH à máquina. |
 | Chave de g01/g02, no CSV da EC2 | Autenticar requisições HTTP em `X-API-Key`. |
-| `redes.crt` | Certificado público usado para conferir HTTPS. |
-| `redes.key`, protegido no servidor | Chave privada TLS; permanece na EC2. |
 
-**Verifique:** por que copiar `redes.crt` não dá acesso aos cadastros? Qual dessas informações deverá entrar no cabeçalho da requisição protegida?
+**Verifique:** a chave SSH e a chave g01 têm a mesma finalidade? Qual delas deverá entrar no cabeçalho da requisição protegida?
+
+Se já usava a versão HTTPS, atualize o clone com `git pull --ff-only` e execute novamente `iniciar-lab.sh`. O script passa a servir HTTP e preserva chaves e banco. Nos clientes, atualize `baseUrl` e a URL da página para `http://`.
 
 Avance para [3. Acessar](03-acessar.md).

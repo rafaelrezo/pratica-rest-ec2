@@ -6,6 +6,8 @@ Inicie uma API e uma aplicação web prontas e investigue recursos, métodos HTT
 
 Todo o roteiro está neste repositório, em Markdown, e é publicado automaticamente como documentação navegável. A prática pode ser concluída sem abrir PDF. Os arquivos PDF/LaTeX da entrega inicial permanecem como histórico.
 
+O percurso principal usa **HTTP, sem configuração de certificados**. Trabalhe somente com dados/chaves didáticos e permita a porta 80 apenas para seu IP ou rede autorizada. HTTPS fica como aprofundamento opcional; REST não depende de configurar TLS.
+
 ## Percurso do aluno
 
 | Etapa | O que você fará | Fonte no repositório |
@@ -13,7 +15,7 @@ Todo o roteiro está neste repositório, em Markdown, e é publicado automaticam
 | Comece aqui | Objetivos, locais de execução e pré-requisitos. | [Introdução](docs/index.md) |
 | 1. Preparar e conectar | Preparar a EC2, baixar os arquivos no seu computador e abrir SSH. | [Preparação](docs/01-preparar.md) |
 | 2. Iniciar na EC2 | Executar os scripts prontos e localizar as credenciais geradas. | [Inicialização](docs/02-iniciar.md) |
-| 3. Acessar | Conferir certificado, importar JSON e configurar Postman/navegador. | [Acesso](docs/03-acessar.md) |
+| 3. Acessar | Testar HTTP, importar JSON e configurar Postman/navegador. | [Acesso](docs/03-acessar.md) |
 | 4. Investigar REST | Prever e executar GET/POST/PATCH/PUT/DELETE e comprovar os efeitos. | [Experimentos REST](docs/04-investigar.md) |
 | 5. Usar a aplicação web | Relacionar cada clique a uma requisição da mesma API. | [Aplicação web](docs/05-aplicacao-web.md) |
 | 6. Diagnosticar | Provocar falhas delimitadas, localizar causas e recuperar o serviço. | [Diagnóstico](docs/06-diagnosticar.md) |
@@ -35,7 +37,7 @@ bash kit/iniciar-lab.sh
 bash kit/validar-lab.sh
 ```
 
-Se a pasta já existir, entre nela e use `git pull --ff-only` em uma cópia sem alterações locais. O início descobre DNS/IPv4 via IMDSv2 e gera g01/g02 automaticamente. Se a descoberta estiver desabilitada, aceita `bash kit/iniciar-lab.sh SEU_DNS_EC2 IP_PUBLICO` com os endereços públicos reais.
+Se a pasta já existir, entre nela e use `git pull --ff-only` em uma cópia sem alterações locais. O início descobre DNS/IPv4 via IMDSv2 e gera g01/g02 automaticamente. Se a descoberta estiver desabilitada, aceita `bash kit/iniciar-lab.sh SEU_DNS_EC2` com o DNS ou o IPv4 público real.
 
 Para começar do zero e usar Postman no seu computador, siga a [etapa 1 da documentação](https://rafaelrezo.github.io/pratica-rest-ec2/01-preparar/). Os comandos acima iniciam o serviço; a investigação REST vem nas etapas seguintes.
 
@@ -52,12 +54,12 @@ A [revisão didática](REVISAO-DIDATICA.md) registra as ambiguidades encontradas
 | `kit/iniciar-lab.sh` | Prepara e inicia a aplicação na EC2 dedicada. |
 | `kit/validar-lab.sh` | Faz a validação básica sem digitar credenciais. |
 | `kit/api/` | API Flask/Gunicorn e geração de credenciais locais. |
-| `kit/config/` | Nginx/HTTPS e unidade systemd. |
+| `kit/config/` | Nginx HTTP e unidade systemd. |
 | `kit/site/` | Portal e cliente web prontos. |
 | `kit/postman/` | Coleção de 13 requisições e ambiente sem chave preenchida. |
 | `docs/` | Roteiro completo, perguntas e registro de validação. |
 
-O script mantém banco e chaves ao repetir a inicialização e republica a página de referência. Credenciais, banco e certificados gerados ficam fora do repositório. Os detalhes de acesso, renovação e encerramento estão no roteiro.
+O script mantém banco e chaves ao repetir a inicialização e republica a página de referência. Credenciais e banco gerados ficam fora do repositório. Os detalhes de acesso e encerramento estão no roteiro.
 
 ## Manter esta documentação
 

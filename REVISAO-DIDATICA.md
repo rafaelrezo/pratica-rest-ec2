@@ -43,7 +43,7 @@ O conteúdo mantém sua exigência conceitual; a preparação de infraestrutura 
 
 - **Problem:** Local e plataforma implícitos.
 - **Principle:** Redução de busca e integração desnecessárias.
-- **Fix:** Terminais A/EC2 e B/local, abas vinculadas WSL/Ubuntu/macOS e transferência explícita dos JSON/certificado para os aplicativos locais.
+- **Fix:** Terminais A/EC2 e B/local, abas vinculadas WSL/Ubuntu/macOS e transferência explícita dos JSON para os aplicativos locais.
 
 - **Problem:** Estado das requisições invisível para o iniciante.
 - **Principle:** Exemplo guiado seguido de retirada gradual de apoio.
@@ -56,3 +56,7 @@ O conteúdo mantém sua exigência conceitual; a preparação de infraestrutura 
 ### Expertise Reversal Check
 
 Os apoios atendem iniciantes. Quem já domina SSH e Postman pode usar os checkpoints para avançar, preservando as perguntas conceituais e a produção de evidências. Não é necessário repetir conteúdo de todas as abas: cada aluno seleciona seu sistema. A revisão não substitui observação de uso real nem ensaios nas três plataformas.
+
+### Ajuste de escopo: HTTP e fundamentos de REST
+
+O professor retirou certificados do percurso principal para concentrar o esforço em REST. O início passa a publicar HTTP, a etapa de acesso mantém somente URL, JSON e credenciais didáticas e o diagnóstico deixa de exigir SAN/importação de certificados. O uso fica delimitado a dados fictícios, com entrada 80 restrita à origem do laboratório. Os fundamentos de REST precedem os experimentos e o diagrama da arquitetura passa a ser renderizado em Mermaid.

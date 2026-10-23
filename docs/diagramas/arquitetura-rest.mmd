@@ -1,0 +1,14 @@
+flowchart TB
+    subgraph PC["Computador do aluno"]
+        B["Navegador<br/>Página e JavaScript"]
+        P["Postman"]
+    end
+    subgraph EC2["EC2 da equipe"]
+        N["Nginx<br/>HTTP na porta 80"]
+        A["API REST<br/>Gunicorn e Flask<br/>127.0.0.1:8000"]
+        D[("SQLite<br/>Cadastros em disco")]
+    end
+    B <-->|"Página /painel.html<br/>e chamadas /api/..."| N
+    P <-->|"Requisições e respostas<br/>HTTP /api/..."| N
+    N <-->|"Proxy HTTP<br/>em loopback"| A
+    A <-->|"Consultar e gravar"| D

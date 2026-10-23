@@ -20,13 +20,12 @@ Se reutilizar a EC2 da prática 1, confira os itens abaixo. Se criar outra, siga
 | Entrada | Porta TCP | Origem |
 | --- | --- | --- |
 | SSH | 22 | Seu IPv4 público atual/32, opção **Meu IP**, ou rede administrativa autorizada. |
-| HTTP | 80 | `0.0.0.0/0`, para observar o redirecionamento. |
-| HTTPS | 443 | `0.0.0.0/0`, para acessar a aplicação didática. |
+| HTTP | 80 | Seu IPv4 público atual/32 (**Meu IP**) ou a rede de saída autorizada do laboratório. |
 | Backend | 8000 | Nenhuma entrada; será acessível apenas dentro da EC2. |
 
-**Esperado:** instância Ubuntu em execução, DNS e IPv4 públicos preenchidos e as três entradas 22/80/443 configuradas. Não é preciso registrar domínio, usar Certbot ou instalar banco gerenciado.
+**Esperado:** instância Ubuntu em execução, DNS e IPv4 públicos preenchidos e as duas entradas 22/80 configuradas. Não é preciso registrar domínio, usar Certbot ou instalar banco gerenciado.
 
-**Verifique:** qual regra permite entrar por SSH? Por que liberar 443 não significa que a aplicação já está funcionando?
+**Verifique:** qual regra permite entrar por SSH? Por que liberar 80 não significa que a aplicação já está funcionando?
 
 **Se não conseguir avançar:** sem IPv4 público ou DNS público, confira atribuição de IP e opções DNS da VPC; sem cota/permissão, resolva o acesso à conta antes de continuar. Não substitua o DNS público pelo privado.
 
@@ -35,8 +34,8 @@ Se reutilizar a EC2 da prática 1, confira os itens abaixo. Se criar outra, siga
 | Marcador | O que colocar |
 | --- | --- |
 | `SUA_CHAVE.pem` | Nome do arquivo `.pem` baixado/selecionado para essa instância. |
-| `SEU_DNS_EC2` | DNS público completo, copiado do console; sem `https://`, espaços ou barras. |
-| `IP_PUBLICO` | IPv4 público atual do console; usado somente se a descoberta automática falhar. |
+| `SEU_DNS_EC2` | DNS público completo, copiado do console; sem `http://`, espaços ou barras. O IPv4 público também pode ser usado como endereço. |
+| `IP_PUBLICO` | IPv4 público atual do console; alternativa ao DNS, caso a descoberta automática falhe. |
 | `SEU_USUARIO_WINDOWS` | Nome da pasta do seu usuário em `C:\Users`, somente no WSL. |
 
 O arquivo será copiado para `~/redes-rest/chave-ec2.pem`. Esse será o nome usado nos comandos seguintes, independentemente do nome original.
@@ -51,7 +50,7 @@ O arquivo será copiado para `~/redes-rest/chave-ec2.pem`. Esse será o nome usa
 
     ```bash
     sudo apt update
-    sudo apt install -y git openssh-client curl ca-certificates
+    sudo apt install -y git openssh-client curl
     mkdir -p ~/redes-rest
     cp "/mnt/c/Users/SEU_USUARIO_WINDOWS/Downloads/SUA_CHAVE.pem" ~/redes-rest/chave-ec2.pem
     chmod 400 ~/redes-rest/chave-ec2.pem
@@ -67,7 +66,7 @@ O arquivo será copiado para `~/redes-rest/chave-ec2.pem`. Esse será o nome usa
 
     ```bash
     sudo apt update
-    sudo apt install -y git openssh-client curl ca-certificates
+    sudo apt install -y git openssh-client curl
     mkdir -p ~/redes-rest
     cp "$HOME/Downloads/SUA_CHAVE.pem" ~/redes-rest/chave-ec2.pem
     chmod 400 ~/redes-rest/chave-ec2.pem

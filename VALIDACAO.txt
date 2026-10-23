@@ -1,3 +1,11 @@
+REVISÃO HTTP E FUNDAMENTOS REST — 23/10/2026
+  Percurso principal: HTTP na porta 80, sem geração/importação de certificado.
+  Fundamentos de REST e diagrama Mermaid incorporados à documentação.
+  Validador HTTP sem certificado aprovado; Nginx em contêiner com Gunicorn
+  e criação/exclusão de cadastro no navegador aprovados. Portas temporárias
+  foram usadas no ensaio; não houve instalação integral em uma EC2.
+  Estado atual em docs/validacao.md. Os registros abaixo são históricos.
+
 VALIDAÇÃO — REVISÃO AUTÔNOMA REST — 23/10/2026
 
 ALTERAÇÕES

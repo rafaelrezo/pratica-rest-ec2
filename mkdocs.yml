@@ -24,6 +24,7 @@ nav:
   - 5. Usar a aplicação web: 05-aplicacao-web.md
   - 6. Diagnosticar: 06-diagnosticar.md
   - 7. Registrar e encerrar: 07-encerrar.md
+  - Aprofundamento opcional: https-opcional.md
   - Estado da validação: validacao.md
 markdown_extensions:
   - admonition
@@ -32,7 +33,11 @@ markdown_extensions:
   - toc:
       permalink: true
   - pymdownx.details
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true
 plugins:

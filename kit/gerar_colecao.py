@@ -54,7 +54,7 @@ collection = {"info": {"name": "Redes 2026-2 | Inventário REST",
                         {"key": "in", "value": "header", "type": "string"}]},
               "variable": [{"key": "nomeTeste", "value": ""}], "item": items}
 environment = {"name": "Redes | preencher localmente", "_postman_variable_scope": "environment",
-               "values": [{"key": "baseUrl", "value": "https://SEU_DNS_EC2", "enabled": True},
+               "values": [{"key": "baseUrl", "value": "http://SEU_DNS_EC2", "enabled": True},
                           {"key": "apiKey", "value": "", "type": "secret", "enabled": True},
                           {"key": "equipamentoId", "value": "", "enabled": True}]}
 for name, value in (("redes-crud.postman_collection.json", collection),

@@ -12,14 +12,14 @@ Antes de encerrar a instância, use a lista para organizar sua entrega:
 - [ ] Usei a página e o Postman sobre o mesmo cadastro, com evidência de Network.
 - [ ] Diagnostiquei uma falha, corrigi sua causa e comprovei a recuperação.
 
-Não inclua `X-API-Key`, valores do CSV, chave SSH ou chave privada TLS nas capturas/arquivos de entrega.
+Não inclua `X-API-Key`, valores do CSV, chave SSH nas capturas/arquivos de entrega.
 
 ## 7.2. Responder às perguntas de fechamento
 
 1. Descreva o percurso de um clique em **Salvar**, do navegador até o banco e de volta à tela.
 2. Como outro cliente poderia utilizar essa API? Quais informações do contrato precisaria conhecer?
 3. Por que saúde 200, sozinha, não comprova autenticação, persistência ou funcionamento de todo o CRUD?
-4. Por que o usuário do navegador consegue observar suas próprias requisições, mesmo usando HTTPS?
+4. Qual a diferença entre o recurso armazenado no servidor e sua representação exibida na página?
 5. Qual teste distingue um erro de credencial de um backend parado? Quais foram suas evidências?
 
 Entregue a tabela da investigação REST, o resultado da coleção, uma evidência da aplicação web e um registro de diagnóstico. Responda com suas observações e justificativas; apenas copiar as saídas do script não explica o funcionamento.
@@ -29,7 +29,6 @@ Entregue a tabela da investigação REST, o resultado da coleção, uma evidênc
 1. Com g01, liste o inventário e exclua apenas os itens de ensaio que você criou. Confira por nova listagem.
 2. Na página, clique **Esquecer chave** e feche-a.
 3. Remova os segredos dos ambientes Postman que serão compartilhados ou usados por outras pessoas.
-4. Remova o certificado didático importado no Postman e no navegador quando não for mais utilizar o laboratório. No Firefox, volte ao gerenciador de certificados da etapa de acesso e remova apenas o certificado deste laboratório.
 
 **Verifique:** qual evidência confirma a remoção de um item? Por que limpar o campo da página não remove o cadastro no servidor?
 
