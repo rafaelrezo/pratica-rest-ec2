@@ -1,0 +1,40 @@
+site_name: Prática REST na EC2
+site_description: API e aplicação web prontas para investigar HTTP e REST
+site_url: https://rafaelrezo.github.io/pratica-rest-ec2/
+repo_url: https://github.com/rafaelrezo/pratica-rest-ec2
+repo_name: rafaelrezo/pratica-rest-ec2
+theme:
+  name: material
+  language: pt-BR
+  font: false
+  features:
+    - content.code.copy
+    - content.tabs.link
+    - navigation.footer
+    - navigation.tracking
+  palette:
+    primary: teal
+    accent: teal
+nav:
+  - Comece aqui: index.md
+  - 1. Preparar e conectar: 01-preparar.md
+  - 2. Iniciar na EC2: 02-iniciar.md
+  - 3. Acessar: 03-acessar.md
+  - 4. Investigar REST: 04-investigar.md
+  - 5. Usar a aplicação web: 05-aplicacao-web.md
+  - 6. Diagnosticar: 06-diagnosticar.md
+  - 7. Registrar e encerrar: 07-encerrar.md
+  - Estado da validação: validacao.md
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+plugins:
+  - search:
+      lang: pt

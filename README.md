@@ -1,91 +1,74 @@
 # Prática REST na EC2
 
-Inicie uma aplicação pronta de inventário das Plantas A/B/C e descubra como uma página web e o Postman utilizam a mesma API. Não é necessário programar.
+**[Abrir a prática completa, com abas WSL, Ubuntu e macOS](https://rafaelrezo.github.io/pratica-rest-ec2/)**
 
-O kit contém API, banco persistente, página web, HTTPS, coleção Postman e dois scripts. As chaves da API são geradas na sua EC2; você não precisa recebê-las do professor.
+Inicie uma API e uma aplicação web prontas e investigue recursos, métodos HTTP, JSON, status, persistência e autorização. Postman e navegador utilizam o mesmo inventário fictício das Plantas A/B/C. Não é necessário programar para realizar a prática.
 
-## 1. Iniciar
+Todo o roteiro está neste repositório, em Markdown, e é publicado automaticamente como documentação navegável. A prática pode ser concluída sem abrir PDF. Os arquivos PDF/LaTeX da entrega inicial permanecem como histórico.
 
-Use uma EC2 **Ubuntu Server 24.04 LTS**, nova ou dedicada à prática, com IPv4 e DNS públicos, acesso à Internet e usuário `ubuntu`. Pode reutilizar a EC2 da prática 1. No Security Group, permita TCP 22 apenas para seu IP/rede administrativa e 80/443 para o acesso web. A porta 8000 permanece fechada. Se o UFW estiver ativo, permita OpenSSH e Nginx Full. A conta AWS, suas permissões e os custos da instância são pré-requisitos.
+## Percurso do aluno
 
-Conecte por SSH, verificando a identidade da instância, e execute na EC2:
+| Etapa | O que você fará | Fonte no repositório |
+| --- | --- | --- |
+| Comece aqui | Objetivos, locais de execução e pré-requisitos. | [Introdução](docs/index.md) |
+| 1. Preparar e conectar | Preparar a EC2, baixar os arquivos no seu computador e abrir SSH. | [Preparação](docs/01-preparar.md) |
+| 2. Iniciar na EC2 | Executar os scripts prontos e localizar as credenciais geradas. | [Inicialização](docs/02-iniciar.md) |
+| 3. Acessar | Conferir certificado, importar JSON e configurar Postman/navegador. | [Acesso](docs/03-acessar.md) |
+| 4. Investigar REST | Prever e executar GET/POST/PATCH/PUT/DELETE e comprovar os efeitos. | [Experimentos REST](docs/04-investigar.md) |
+| 5. Usar a aplicação web | Relacionar cada clique a uma requisição da mesma API. | [Aplicação web](docs/05-aplicacao-web.md) |
+| 6. Diagnosticar | Provocar falhas delimitadas, localizar causas e recuperar o serviço. | [Diagnóstico](docs/06-diagnosticar.md) |
+| 7. Registrar e encerrar | Salvar evidências e encerrar os recursos da equipe. | [Encerramento](docs/07-encerrar.md) |
+
+Cada etapa informa **onde executar**, **o que fazer**, **qual resultado esperar** e **perguntas para verificar a compreensão**. As abas por sistema funcionam no [site da documentação](https://rafaelrezo.github.io/pratica-rest-ec2/); na visualização Markdown do GitHub aparece a sintaxe dessas abas.
+
+## Início rápido
+
+Se já concluiu os pré-requisitos e está **conectado por SSH à sua EC2 Ubuntu 24.04, como `ubuntu`**:
 
 ```bash
+cd ~
 sudo apt update
 sudo apt install -y git
-git clone https://github.com/rafaelrezo/pratica-rest-ec2.git pratica-rest-ec2
+git clone https://github.com/rafaelrezo/pratica-rest-ec2.git
 cd ~/pratica-rest-ec2
 bash kit/iniciar-lab.sh
 bash kit/validar-lab.sh
 ```
 
-Se recebeu o ZIP, extraia e envie `kit/` por SCP para a EC2; execute os dois scripts nessa pasta.
+Se a pasta já existir, entre nela e use `git pull --ff-only` em uma cópia sem alterações locais. O início descobre DNS/IPv4 via IMDSv2 e gera g01/g02 automaticamente. Se a descoberta estiver desabilitada, aceita `bash kit/iniciar-lab.sh SEU_DNS_EC2 IP_PUBLICO` com os endereços públicos reais.
 
-O início instala e configura os componentes prontos. A primeira execução requer Internet e pode levar alguns minutos. A descoberta do endereço usa os metadados IMDSv2 da EC2. Se estiverem desabilitados, copie DNS e IPv4 públicos do console:
+Para começar do zero e usar Postman no seu computador, siga a [etapa 1 da documentação](https://rafaelrezo.github.io/pratica-rest-ec2/01-preparar/). Os comandos acima iniciam o serviço; a investigação REST vem nas etapas seguintes.
 
-```bash
-bash kit/iniciar-lab.sh SEU_DNS_EC2 IP_PUBLICO
-bash kit/validar-lab.sh
-```
+## Validação e revisão
 
-A validação imprime método, caminho, status esperado e recebido. Ela cria e exclui apenas um item de ensaio. Um resultado `OK` indica que você pode começar a investigação no Postman e no navegador.
+A API e o validador têm testes locais registrados. **Ainda falta ensaio integral em uma EC2 real e nas três plataformas locais.** Consulte o [estado da validação](https://rafaelrezo.github.io/pratica-rest-ec2/validacao/) e o [registro em Markdown](docs/validacao.md), que distinguem revisão documental, testes executados e ensaios pendentes.
 
-## 2. Acessar
+A [revisão didática](REVISAO-DIDATICA.md) registra as ambiguidades encontradas e os ajustes de sequência, localização dos comandos e perguntas de verificação.
 
-Na sessão SSH privada, consulte a URL e as credenciais geradas:
+## Arquivos prontos
 
-```bash
-cat ~/redes-lab.url
-cat ~/chaves-redes/entrega-grupos.csv
-openssl x509 -in ~/redes.crt -noout -fingerprint -sha256
-```
-
-Use **g01** no trabalho principal. **g02** é uma segunda identidade para testar autorização, sem precisar de outra equipe. As chaves são aleatórias e específicas de cada EC2. Não as inclua no relatório, em prompts ou no Git.
-
-Na sua estação, copie somente o certificado público pelo SSH já verificado:
-
-```bash
-scp -i SUA_CHAVE.pem ubuntu@SEU_DNS_EC2:~/redes.crt .
-openssl x509 -in redes.crt -noout -fingerprint -sha256
-curl --cacert redes.crt -i https://SEU_DNS_EC2/api/saude
-```
-
-Compare as impressões digitais. Importe `redes.crt` nas CA Certificates do Postman Desktop, mantendo a verificação TLS ligada. No navegador, confira e estabeleça a confiança específica para esse certificado didático. O certificado autoassinado não possui confiança pública automática.
-
-Abra `https://SEU_DNS_EC2/painel.html`, informe a chave de g01 e clique em **Conectar / listar**.
-
-## 3. Investigar REST
-
-Importe a coleção e o ambiente de `kit/postman/`. Configure `baseUrl` com a URL HTTPS da sua EC2, **sem `/api`**, e `apiKey` com a chave de g01, como valor privado. O PDF `02-api-rest-postman.pdf` detalha o contrato e os experimentos.
-
-| Experimento | O que observar |
+| Arquivo/pasta | Função |
 | --- | --- |
-| GET `/api/saude`, sem chave | 200: a aplicação responde. |
-| GET `/api/equipamentos`, sem/com chave | 401/200: autenticação e representação da coleção. |
-| POST `/api/equipamentos` | JSON enviado, 201, ID e `Location`. |
-| GET do ID criado | O recurso existe e possui uma representação. |
-| PATCH e PUT do ID | Alteração parcial e substituição completa; PUT incompleto gera 400. |
-| DELETE do ID e outro GET | 204 sem corpo; depois, 404. |
-| Usar g02 para ler um ID de g01 | 404: chave válida com escopo diferente. |
-| Criar pela página e consultar pelo Postman | Dois clientes utilizam a mesma API e o mesmo armazenamento. |
+| `kit/iniciar-lab.sh` | Prepara e inicia a aplicação na EC2 dedicada. |
+| `kit/validar-lab.sh` | Faz a validação básica sem digitar credenciais. |
+| `kit/api/` | API Flask/Gunicorn e geração de credenciais locais. |
+| `kit/config/` | Nginx/HTTPS e unidade systemd. |
+| `kit/site/` | Portal e cliente web prontos. |
+| `kit/postman/` | Coleção de 13 requisições e ambiente sem chave preenchida. |
+| `docs/` | Roteiro completo, perguntas e registro de validação. |
 
-Abra **Network/Rede** nas ferramentas do navegador. Relacione cada clique com método, URL, corpo JSON, status e mudança na tela. Explique como esse contrato permite criar outros clientes para a mesma API.
+O script mantém banco e chaves ao repetir a inicialização e republica a página de referência. Credenciais, banco e certificados gerados ficam fora do repositório. Os detalhes de acesso, renovação e encerramento estão no roteiro.
 
-Não precisa modificar Python/HTML, compilar frontend ou usar v0 para concluir a prática. O prompt do v0 permanece em `kit/prompts/` como aprofundamento opcional.
+## Manter esta documentação
 
-## 4. Diagnosticar e encerrar
+Edite os arquivos de `docs/`. Ao enviar alterações à branch `main`, o workflow publica o site com as abas. Os alunos não precisam instalar ferramentas de documentação.
 
-Na EC2, se necessário:
+Para uma prévia local, em um ambiente Python de manutenção:
 
 ```bash
-sudo systemctl status redes-api --no-pager
-curl -i http://127.0.0.1:8000/api/saude
-sudo journalctl -u redes-api -n 30 --no-pager
-sudo nginx -t
+python3 -m venv .venv-docs
+.venv-docs/bin/pip install -r requirements-docs.txt
+.venv-docs/bin/mkdocs serve
 ```
 
-Se os testes locais passam e a estação não acessa, confira DNS/IP, regras 443 e caminho de rede. Se houver erro TLS, confira confiança, SAN e validade. Saúde 200 com listagem 401 indica um problema de credencial, e não ausência do serviço.
-
-Reexecutar `iniciar-lab.sh` mantém chaves e banco e republica a página pronta. O certificado dura sete dias: o script o renova se estiver próximo do vencimento ou se o endereço mudar; copie e confira o novo `redes.crt` na estação. A configuração da API fica em `/etc/redes-api.env` e o banco em `/var/lib/redes-api/inventario.db`, fora do repositório.
-
-Salve as evidências, exclua os cadastros de ensaio e termine a EC2 da equipe quando concluir. Confira os recursos remanescentes da conta. O inventário usa somente dados fictícios e não controla equipamentos reais.
+O comando mostra o endereço local da prévia. Para conferir links e a construção antes de publicar, use `.venv-docs/bin/mkdocs build --strict`.
